@@ -274,6 +274,5 @@ public class SSA_SA {
         System.out.println("退火次数：" + count);
         System.out.println("迭代完成后最优点：" + updateMap.get("globalMax").doubleValue());
         System.out.println("迭代完成后最优适应度：" + updateMap.get("fg").doubleValue());
-
     }
 }

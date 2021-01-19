@@ -79,7 +79,6 @@ public class MECRunner {
 
         //初始化所有移动用户的上传速率
         initMobileUser();
-        System.out.println(mobileUsers.get(0).getUplinkRate());
 //        //初始化移动用户的 Random Walk Model 即预定路线
 //        initMobileConf();
 //
@@ -119,13 +118,17 @@ public class MECRunner {
             return BigDecimal.valueOf(edgeSettings.getBandwidth() *
                     BigDecimal.valueOf((BigDecimal.valueOf(Math.log(1 + (BigDecimal.valueOf(mobileUser.getTransPower() * BigDecimal.valueOf(Math.pow(mobileUser.getDistance(), -edgeSettings.getEta())).doubleValue())).doubleValue()
                             / BigDecimal.valueOf((edgeSettings.getBackgroundNoisePower() + sumW)).doubleValue())).doubleValue()
-                            / BigDecimal.valueOf(Math.log(2)).doubleValue())).doubleValue()).setScale(2, BigDecimal.ROUND_FLOOR).doubleValue();
+                            / BigDecimal.valueOf(Math.log(2)).doubleValue())).doubleValue()).setScale(0, BigDecimal.ROUND_HALF_UP).doubleValue();
         } else {
             //backgroundNoisePower 为 dbm 时
             return BigDecimal.valueOf(edgeSettings.getBandwidth() *
                     (BigDecimal.valueOf(Math.log(1 + (BigDecimal.valueOf(mobileUser.getTransPower() * BigDecimal.valueOf(Math.pow(mobileUser.getDistance(), -edgeSettings.getEta())).doubleValue()).doubleValue())
                             / BigDecimal.valueOf((BigDecimal.valueOf(Math.pow(10, edgeSettings.getBackgroundNoisePower() / 10.0)).doubleValue() / 1000 + sumW)).doubleValue())).doubleValue()
-                            / BigDecimal.valueOf(Math.log(2)).doubleValue())).setScale(2, BigDecimal.ROUND_FLOOR).doubleValue();
+                            / BigDecimal.valueOf(Math.log(2)).doubleValue())).setScale(0, BigDecimal.ROUND_HALF_UP).doubleValue();
         }
+    }
+
+    private static void SSA() {
+
     }
 }
