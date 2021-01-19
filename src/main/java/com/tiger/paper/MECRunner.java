@@ -2,9 +2,9 @@ package com.tiger.paper;
 
 import java.math.BigDecimal;
 import java.text.DecimalFormat;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Random;
+import java.util.*;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 
 /**
  * @author 孙小虎
@@ -79,14 +79,12 @@ public class MECRunner {
 
         //初始化所有移动用户的上传速率
         initMobileUser();
-//        //初始化移动用户的 Random Walk Model 即预定路线
-//        initMobileConf();
-//
-//        double t = 2.12d;
-//        mobileUsers.get(0).setExecTime(t);
-//        reFreshMobileUplinkRate(mobileUsers.get(0));
+        //初始化移动用户的 Random Walk Model 即预定路线
+        initMobileConf();
 
+        reFreshMobileUplinkRate(mobileUsers.get(0));
 
+        new SSA(100, 300, 0.2f, 0.1f, 0.8f, mobileUsers).calculate();
     }
 
     /**
@@ -127,6 +125,114 @@ public class MECRunner {
                             / BigDecimal.valueOf(Math.log(2)).doubleValue())).setScale(0, BigDecimal.ROUND_HALF_UP).doubleValue();
         }
     }
+
+    /**
+     * Random Walk Model
+     * 初始化移动用户的移动模型
+     */
+    private static void initMobileConf() {
+        Random random = new Random();
+        //这里只移动第一个用户 其他用户考虑静止
+        MobileUser user = mobileUsers.get(0);
+        for (int i = 0; i < 5; i++) {
+            int newDistance;
+            //0 - 360° 之间随机
+            int degree;
+            float v = user.getSpeed()[random.nextInt(user.getSpeed().length)];
+            float t = user.getTimeInterval()[random.nextInt(user.getTimeInterval().length)];
+            double step = v * t;
+            HashMap<String, Object> mobileConf = new HashMap<>();
+            do {
+                degree = random.nextInt(361);
+                if (degree == 0 || degree == 360) {
+                    newDistance = (int) (user.getDistance() + step);
+                } else if (degree == 180) {
+                    newDistance = (int) Math.abs(user.getDistance() - step);
+                } else {
+                    if (degree < 180) {
+                        newDistance = (int) Math.sqrt(Math.pow(user.getDistance(), 2) + Math.pow(step, 2) - 2 * user.getDistance() * step * Float.valueOf(df.format(Math.cos(Math.toRadians(180 - degree)))));
+                        mobileConf.put("degree", 180 - degree);
+                    } else {
+                        newDistance = (int) Math.sqrt(Math.pow(user.getDistance(), 2) + Math.pow(step, 2) - 2 * user.getDistance() * step * Float.valueOf(df.format(Math.cos(Math.toRadians(degree - 180)))));
+                        mobileConf.put("degree", degree - 180);
+                    }
+                }
+            } while (newDistance > edgeSettings.getSignalRange());
+
+            //这里说明移动后距离没超过MEC的信号范围
+            mobileConf.put("startingPoint", user.getDistance());
+            mobileConf.put("speed", v);
+            mobileConf.put("time", t);
+
+            user.getMobileConf().add(mobileConf);
+            //将原先距离修改为新的移动点的距离
+            user.setDistance(((float) newDistance));
+        }
+    }
+
+    /**
+     * @param mobileUser 当前移动用户
+     * @return 刷新上传速率
+     */
+    private static void reFreshMobileUplinkRate(MobileUser mobileUser) {
+        double execTime = mobileUser.getExecTime();
+        double sumW = BigDecimal.valueOf(0.0d).doubleValue();
+
+        for (MobileUser user : mobileUsers) {
+            if (mobileUser.getId().intValue() != user.getId().intValue()) {
+                sumW += BigDecimal.valueOf(user.getTransPower() * BigDecimal.valueOf(Math.pow(user.getDistance(), -edgeSettings.getEta())).doubleValue()).doubleValue();
+//                sumW += BigDecimal.valueOf(user.getTransPower() * BigDecimal.valueOf(Math.pow(calculateDistance(user, execTime), -edgeSettings.getEta())).doubleValue()).doubleValue();
+            }
+        }
+        //根据用户的执行时间 计算出离基站的距离
+        int distance = calculateDistance(mobileUser, execTime);
+
+        mobileUser.getUplinkDistance().add(distance);
+
+        //上传速率公式为香农公式  见 上传速率公式.png
+        if (edgeSettings.getBackgroundNoisePower() > 0) {
+            //backgroundNoisePower为 W 时
+            mobileUser.setUplinkRate(BigDecimal.valueOf(edgeSettings.getBandwidth() *
+                    BigDecimal.valueOf((BigDecimal.valueOf(Math.log(1 + (BigDecimal.valueOf(mobileUser.getTransPower() * BigDecimal.valueOf(Math.pow(distance, -edgeSettings.getEta())).doubleValue())).doubleValue()
+                            / BigDecimal.valueOf((edgeSettings.getBackgroundNoisePower() + sumW)).doubleValue())).doubleValue()
+                            / BigDecimal.valueOf(Math.log(2)).doubleValue())).doubleValue()).setScale(0, BigDecimal.ROUND_HALF_UP).doubleValue());
+            ;
+        } else {
+            //backgroundNoisePower 为 dbm 时
+            mobileUser.setUplinkRate(BigDecimal.valueOf(edgeSettings.getBandwidth() *
+                    (BigDecimal.valueOf(Math.log(1 + (BigDecimal.valueOf(mobileUser.getTransPower() * BigDecimal.valueOf(Math.pow(distance, -edgeSettings.getEta())).doubleValue()).doubleValue())
+                            / BigDecimal.valueOf((BigDecimal.valueOf(Math.pow(10, edgeSettings.getBackgroundNoisePower() / 10.0)).doubleValue() / 1000 + sumW)).doubleValue())).doubleValue()
+                            / BigDecimal.valueOf(Math.log(2)).doubleValue())).setScale(0, BigDecimal.ROUND_HALF_UP).doubleValue());
+        }
+
+    }
+
+    /**
+     * @param mobileUser 当前移动用户
+     * @param execTime   执行时间
+     * @return 计算离基站多远
+     */
+    private static int calculateDistance(MobileUser mobileUser, double execTime) {
+        List<Map<String, Object>> mobileConf = mobileUser.getMobileConf();
+        double timeNum = 0.0d;
+        int i = 0;
+        //找到 execTime 所在哪个区间 这样就能算出 这时其他移动用户离基站距离 以及 功率
+        for (; i < mobileConf.size(); i++) {
+            double time = Double.valueOf(mobileConf.get(i).get("time").toString());
+            if (time + timeNum < execTime) {
+                timeNum += time;
+            } else {
+                break;
+            }
+        }
+        Map<String, Object> mobileMap = mobileConf.get(i);
+        float startingPoint = Float.valueOf(mobileMap.get("startingPoint").toString());
+        float speed = Float.valueOf(mobileMap.get("speed").toString());
+        int degree = Integer.valueOf(mobileMap.get("degree").toString());
+        double time = execTime - timeNum;
+        return (int) Math.sqrt(Math.pow(startingPoint, 2) + Math.pow(speed * time, 2) - 2 * startingPoint * speed * time * Float.valueOf(df.format(Math.cos(Math.toRadians(degree)))));
+    }
+
 
     private static void SSA() {
 
