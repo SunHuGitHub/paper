@@ -27,17 +27,12 @@ public class MECRunner {
      * 移动用户个数
      */
     private static final int USERNUM = 10;
-    /**
-     * 格式化小数点
-     */
-    private static DecimalFormat df;
 
     public static void main(String[] args) {
 
         //带宽 1MHZ  背景噪声 -100dbm MEC计算能力 5GHZ  路径衰落因子 4  边缘服务器基站范围
         edgeSettings = new EdgeSettings(3e6f, -100f, 5e9f, 4, 500);
         mobileUsers = new ArrayList<>();
-        df = new DecimalFormat("0.00");
         //本模型是最小化每个移动用户的costFuntion 即 min costFuntion()
         //任务数据量 单位KB
         int[] taskDataSize = {300, 400, 500, 600};
@@ -133,26 +128,35 @@ public class MECRunner {
         Random random = new Random();
         //这里只移动第一个用户 其他用户考虑静止
         MobileUser user = mobileUsers.get(0);
-        for (int i = 0; i < 5; i++) {
+        int degree;
+        float v;
+        float t;
+        double step;
+        int[] degreeScope = new int[]{45, 90, 135, 180, 225, 270, 315, 360};
+        HashMap<String, Object> mobileConf;
+        for (int i = 0; i < TASKNUM; i++) {
             int newDistance;
-            //0 - 360° 之间随机
-            int degree;
-            float v = user.getSpeed()[random.nextInt(user.getSpeed().length)];
-            float t = user.getTimeInterval()[random.nextInt(user.getTimeInterval().length)];
-            double step = v * t;
-            HashMap<String, Object> mobileConf = new HashMap<>();
+
+            v = user.getSpeed()[random.nextInt(user.getSpeed().length)];
+            t = user.getTimeInterval()[random.nextInt(user.getTimeInterval().length)];
+            step = v * t;
+            mobileConf = new HashMap<>();
             do {
-                degree = random.nextInt(361);
+                //0 - 360° 之间随机
+//                degree = random.nextInt(361);
+                degree = degreeScope[new Random().nextInt(degreeScope.length)];
                 if (degree == 0 || degree == 360) {
                     newDistance = (int) (user.getDistance() + step);
+                    mobileConf.put("degree", degree);
                 } else if (degree == 180) {
                     newDistance = (int) Math.abs(user.getDistance() - step);
+                    mobileConf.put("degree", degree);
                 } else {
                     if (degree < 180) {
-                        newDistance = (int) Math.sqrt(Math.pow(user.getDistance(), 2) + Math.pow(step, 2) - 2 * user.getDistance() * step * Float.valueOf(df.format(Math.cos(Math.toRadians(180 - degree)))));
+                        newDistance = (int) BigDecimal.valueOf(Math.sqrt(Math.pow(user.getDistance(), 2) + Math.pow(step, 2) - 2 * user.getDistance() * step * BigDecimal.valueOf(Math.cos(Math.toRadians(180 - degree))).doubleValue())).setScale(0, BigDecimal.ROUND_HALF_UP).doubleValue();
                         mobileConf.put("degree", 180 - degree);
                     } else {
-                        newDistance = (int) Math.sqrt(Math.pow(user.getDistance(), 2) + Math.pow(step, 2) - 2 * user.getDistance() * step * Float.valueOf(df.format(Math.cos(Math.toRadians(degree - 180)))));
+                        newDistance = (int) BigDecimal.valueOf(Math.sqrt(Math.pow(user.getDistance(), 2) + Math.pow(step, 2) - 2 * user.getDistance() * step * BigDecimal.valueOf(Math.cos(Math.toRadians(degree - 180))).doubleValue())).setScale(0, BigDecimal.ROUND_HALF_UP).doubleValue();
                         mobileConf.put("degree", degree - 180);
                     }
                 }
@@ -167,10 +171,67 @@ public class MECRunner {
             //将原先距离修改为新的移动点的距离
             user.setDistance(((float) newDistance));
         }
+//        HashMap<String, Object> mobileConf = new HashMap<>();
+//
+//        mobileConf.put("startingPoint", user.getDistance());
+//        float v = user.getSpeed()[random.nextInt(user.getSpeed().length)];
+//        float t = user.getTimeInterval()[random.nextInt(user.getTimeInterval().length)];
+//        float step = v * t;
+//        int newDistance = (int) BigDecimal.valueOf(Math.sqrt(Math.pow(user.getDistance(), 2) + Math.pow(step, 2) - 2 * user.getDistance() * step * BigDecimal.valueOf(Math.cos(Math.toRadians(45))).doubleValue())).setScale(0, BigDecimal.ROUND_HALF_UP).doubleValue();
+//        mobileConf.put("speed", v);
+//        mobileConf.put("time", t);
+//        mobileConf.put("degree", 45);
+//        user.getMobileConf().add(mobileConf);
+//        //将原先距离修改为新的移动点的距离
+//        user.setDistance(((float) newDistance));
+//
+//        v = user.getSpeed()[random.nextInt(user.getSpeed().length)];
+//        t = user.getTimeInterval()[random.nextInt(user.getTimeInterval().length)];
+//        step = v * t;
+//        newDistance = (int) BigDecimal.valueOf(Math.sqrt(Math.pow(user.getDistance(), 2) + Math.pow(step, 2) - 2 * user.getDistance() * step * BigDecimal.valueOf(Math.cos(Math.toRadians(90))).doubleValue())).setScale(0, BigDecimal.ROUND_HALF_UP).doubleValue();
+//        mobileConf.put("startingPoint", user.getDistance());
+//        mobileConf.put("speed", v);
+//        mobileConf.put("time", t);
+//        mobileConf.put("degree", 90);
+//        user.getMobileConf().add(mobileConf);
+//        //将原先距离修改为新的移动点的距离
+//        user.setDistance(((float) newDistance));
+//
+//        v = user.getSpeed()[random.nextInt(user.getSpeed().length)];
+//        t = user.getTimeInterval()[random.nextInt(user.getTimeInterval().length)];
+//        step = v * t;
+//        newDistance = (int) BigDecimal.valueOf(Math.sqrt(Math.pow(user.getDistance(), 2) + Math.pow(step, 2) - 2 * user.getDistance() * step * BigDecimal.valueOf(Math.cos(Math.toRadians(90))).doubleValue())).setScale(0, BigDecimal.ROUND_HALF_UP).doubleValue();
+//        mobileConf.put("startingPoint", user.getDistance());
+//        mobileConf.put("speed", v);
+//        mobileConf.put("time", t);
+//        mobileConf.put("degree", 90);
+//        user.getMobileConf().add(mobileConf);
+//        //将原先距离修改为新的移动点的距离
+//        user.setDistance(((float) newDistance));
+//
+//        v = user.getSpeed()[random.nextInt(user.getSpeed().length)];
+//        t = user.getTimeInterval()[random.nextInt(user.getTimeInterval().length)];
+//        step = v * t;
+//        newDistance = (int) BigDecimal.valueOf(Math.sqrt(Math.pow(user.getDistance(), 2) + Math.pow(step, 2) - 2 * user.getDistance() * step * BigDecimal.valueOf(Math.cos(Math.toRadians(90))).doubleValue())).setScale(0, BigDecimal.ROUND_HALF_UP).doubleValue();
+//        mobileConf.put("startingPoint", user.getDistance());
+//        mobileConf.put("speed", v);
+//        mobileConf.put("time", t);
+//        mobileConf.put("degree", 90);
+//        user.getMobileConf().add(mobileConf);
+//        //将原先距离修改为新的移动点的距离
+//        user.setDistance(((float) newDistance));
+//
+//        v = user.getSpeed()[random.nextInt(user.getSpeed().length)];
+//        t = user.getTimeInterval()[random.nextInt(user.getTimeInterval().length)];
+//        step = v * t;
+//        newDistance = (int) BigDecimal.valueOf(Math.sqrt(Math.pow(user.getDistance(), 2) + Math.pow(step, 2) - 2 * user.getDistance() * step * BigDecimal.valueOf(Math.cos(Math.toRadians(90))).doubleValue())).setScale(0, BigDecimal.ROUND_HALF_UP).doubleValue();
+//        mobileConf.put("startingPoint", user.getDistance());
+//        mobileConf.put("speed", v);
+//        mobileConf.put("time", t);
+//        mobileConf.put("degree", 90);
+//        user.getMobileConf().add(mobileConf);
+//        //将原先距离修改为新的移动点的距离
+//        user.setDistance(((float) newDistance));
     }
 
-
-    private static void SSA() {
-
-    }
 }

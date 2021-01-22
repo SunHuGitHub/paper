@@ -80,7 +80,7 @@ public class SSA {
             sparrowIndex = new ArrayList<>();
             for (int k = 0; k < taskSize; k++) {
                 //这里设置每个麻雀的坐标 最大 1 表示卸载 100% 0表示卸载 0% 即不卸载
-                sparrowIndex.add((RANDOM.nextInt(101) * 0.01));
+                sparrowIndex.add(BigDecimal.valueOf((RANDOM.nextInt(101) * 0.01)).setScale(2,BigDecimal.ROUND_HALF_UP).doubleValue());
             }
             coordinatePoints.add(sparrowIndex);
         }
@@ -95,18 +95,28 @@ public class SSA {
         //(0,1]之间的随机值
         double r;
         //麻雀坐标
-        List<Double> sparrowIndex = null;
+        List<Double> sparrowIndex;
         for (int i = 1; i <= PD; i++) {
             sparrowIndex = coordinatePoints.get(i);
             if (r2 < ST) {
                 r = BigDecimal.valueOf(1 - Math.random()).doubleValue();
                 for (int k = 0; k < sparrowIndex.size(); k++) {
-                    sparrowIndex.add(k, BigDecimal.valueOf(sparrowIndex.get(k) * Math.exp((-i) / BigDecimal.valueOf((r * iterations)).doubleValue())).setScale(2, BigDecimal.ROUND_HALF_UP).doubleValue());
+                    double value = BigDecimal.valueOf(sparrowIndex.get(k) * Math.exp((-i) / BigDecimal.valueOf((r * iterations)).doubleValue())).setScale(2, BigDecimal.ROUND_HALF_UP).doubleValue();
+                    if (value > 1 || value < 0) {
+                        sparrowIndex.add(k, sparrowIndex.get(k));
+                    } else {
+                        sparrowIndex.add(k, value);
+                    }
                 }
             } else {
                 //因为是1维 所以L为1
                 for (int k = 0; k < sparrowIndex.size(); k++) {
-                    sparrowIndex.add(k, BigDecimal.valueOf(sparrowIndex.get(k) + RANDOM.nextGaussian()).setScale(2, BigDecimal.ROUND_HALF_UP).doubleValue());
+                    double value = BigDecimal.valueOf(sparrowIndex.get(k) + RANDOM.nextGaussian()).setScale(2, BigDecimal.ROUND_HALF_UP).doubleValue();
+                    if (value > 1 || value < 0) {
+                        sparrowIndex.add(k, sparrowIndex.get(k));
+                    } else {
+                        sparrowIndex.add(k, value);
+                    }
                 }
             }
         }
@@ -118,21 +128,36 @@ public class SSA {
     private void updateScroungerPoint() throws NumberFormatException {
         List<Double> pdMax;
         //麻雀坐标
-        List<Double> sparrowIndex = null;
+        List<Double> sparrowIndex;
         for (int i = PD + 1; i <= speciesNum; i++) {
             sparrowIndex = coordinatePoints.get(i);
             if (i > speciesNum * 1.0 / 2) {
                 for (int k = 0; k < sparrowIndex.size(); k++) {
-                    sparrowIndex.add(k,BigDecimal.valueOf(RANDOM.nextGaussian() *
+                    double value = BigDecimal.valueOf(RANDOM.nextGaussian() *
                             Math.exp(((((List<Double>) updateMap.get("globalMin")).get(k) - sparrowIndex.get(k)) / Math.pow(i, 2))))
-                            .setScale(2,BigDecimal.ROUND_HALF_UP).doubleValue());
+                            .setScale(2, BigDecimal.ROUND_HALF_UP).doubleValue();
+                    if (value > 1 || value < 0) {
+                        sparrowIndex.add(k, sparrowIndex.get(k));
+                    } else {
+                        sparrowIndex.add(k, value);
+                    }
                 }
             } else {
                 pdMax = (List<Double>) updateMap.get("pdMax");
                 //一维情况下 A+ 要么是1 要么是-1  因为是1维 所以L为1
-                map.put("x", BigDecimal.valueOf(pdMax.doubleValue() + BigDecimal.valueOf(Math.abs(map.get("x").doubleValue() - pdMax.doubleValue())).doubleValue() * BigDecimal.valueOf(A[Math.random() > 0.5 ? 1 : 0] * 1).doubleValue()));
+                for (int k = 0; k < sparrowIndex.size(); k++) {
+                    double value = 0.0d;
+                    for (int z = 0; z < sparrowIndex.size(); z++) {
+                        value += A[Math.random() > 0.5 ? 1 : 0] * Math.abs(sparrowIndex.get(z) - pdMax.get(z));
+                    }
+                    value = BigDecimal.valueOf(value / sparrowIndex.size()).setScale(2, BigDecimal.ROUND_HALF_UP).doubleValue();
+                    if (value > 1 || value < 0) {
+                        sparrowIndex.add(k, sparrowIndex.get(k));
+                    } else {
+                        sparrowIndex.add(k, value);
+                    }
+                }
             }
-            coordinatePoints.set(i, map);
         }
     }
 
@@ -140,6 +165,7 @@ public class SSA {
      * 随机选择SD个个体进行预警行为 对应论文中的公式五
      */
     private void updateSDPoint() {
+        //SD集合
         ArrayList<Integer> sdIndex = new ArrayList<>(SD);
         //随机选择SD个 麻雀坐标索引
         for (int i = 1; i <= SD; i++) {
@@ -152,23 +178,35 @@ public class SSA {
             sdIndex.add(index);
         }
         for (int i = 0; i < sdIndex.size(); i++) {
-            Map<String, BigDecimal> map = coordinatePoints.get(sdIndex.get(i));
-            BigDecimal x = map.get("x");
-            BigDecimal f = f(x);
-            BigDecimal fg = updateMap.get("fg");
-            BigDecimal fw = updateMap.get("fw");
-            BigDecimal globalMax = updateMap.get("globalMax");
-            BigDecimal globalMin = updateMap.get("globalMin");
-            if (f.doubleValue() > fg.doubleValue()) {
+            List<Double> sparrowIndex = coordinatePoints.get(sdIndex.get(i));
+            double f = f(sparrowIndex);
+            double fg = (double) updateMap.get("fg");
+            double fw = (double) updateMap.get("fw");
+            List<Double> globalMax = (List<Double>) updateMap.get("globalMax");
+            List<Double> globalMin = (List<Double>) updateMap.get("globalMin");
+            double value;
+            if (f > fg) {
                 //这里步长也是一个优化点。暂且还没优化
                 //在寻优前期, 为了扩大在解空间整体的搜索范围, 加快寻优速度, 应该采用较大的步长因子；
                 //在寻优后期, 搜索解趋于稳定, 为了使解的精度更高, 应该减小步长因子。
                 //另外, 初始步长因子越小, 越容易陷入局部极值, 所以应给与较高的初始值, 如0.95
-                map.put("x", BigDecimal.valueOf(globalMax.doubleValue() + BigDecimal.valueOf(RANDOM.nextGaussian() * BigDecimal.valueOf(Math.abs(x.doubleValue() - globalMax.doubleValue())).doubleValue()).doubleValue()));
-                coordinatePoints.set(i, map);
-            } else if (BigDecimal.valueOf(Math.abs(f.doubleValue() - fg.doubleValue())).doubleValue() < 1e-15) {
-                map.put("x", BigDecimal.valueOf(x.doubleValue() + BigDecimal.valueOf((2 * Math.random() - 1)).doubleValue() * BigDecimal.valueOf((BigDecimal.valueOf(Math.abs(x.doubleValue() - globalMin.doubleValue())).doubleValue() / BigDecimal.valueOf((f.doubleValue() - fw.doubleValue() + 1e-50)).doubleValue())).doubleValue()));
-                coordinatePoints.set(i, map);
+                for (int k = 0; k < sparrowIndex.size(); k++) {
+                    value = BigDecimal.valueOf(globalMax.get(k) + RANDOM.nextGaussian() * Math.abs(sparrowIndex.get(k) - globalMax.get(k))).setScale(2, BigDecimal.ROUND_HALF_UP).doubleValue();
+                    if (value > 1 || value < 0) {
+                        sparrowIndex.add(k, sparrowIndex.get(k));
+                    } else {
+                        sparrowIndex.add(k, value);
+                    }
+                }
+            } else if (Math.abs(f - fg) < 1e-15) {
+                for (int k = 0; k < sparrowIndex.size(); k++) {
+                    value = BigDecimal.valueOf(sparrowIndex.get(k) + Math.random() * ((sparrowIndex.get(k) - globalMin.get(k)) / (Math.abs(f - fw) + 1e-50))).setScale(2, BigDecimal.ROUND_HALF_UP).doubleValue();
+                    if (value > 1 || value < 0) {
+                        sparrowIndex.add(k, sparrowIndex.get(k));
+                    } else {
+                        sparrowIndex.add(k, value);
+                    }
+                }
             }
         }
 
@@ -188,7 +226,7 @@ public class SSA {
         for (int i = 2; i <= speciesNum; i++) {
             sparrowIndex = coordinatePoints.get(i);
             f = f(sparrowIndex);
-            if (i <= PD && f(pdMax) < f) {
+            if (i <= PD && f(pdMax) > f) {
                 pdMax = sparrowIndex;
             }
             if (f(globalMin) > f) {
@@ -302,30 +340,33 @@ public class SSA {
                 break;
             }
         }
+        if (i == mobileConf.size()) {
+            i--;
+        }
         Map<String, Object> mobileMap = mobileConf.get(i);
         float startingPoint = Float.parseFloat(mobileMap.get("startingPoint").toString());
         float speed = Float.parseFloat(mobileMap.get("speed").toString());
         int degree = Integer.parseInt(mobileMap.get("degree").toString());
         double time = execTime - timeNum;
-        return (int) Math.sqrt(Math.pow(startingPoint, 2) + Math.pow(speed * time, 2) - 2 * startingPoint * speed * time * Float.valueOf(df.format(Math.cos(Math.toRadians(degree)))));
+        return (int) Math.sqrt(Math.pow(startingPoint, 2) + Math.pow(speed * time, 2) - 2 * startingPoint * speed * time * BigDecimal.valueOf(Math.cos(Math.toRadians(degree))).setScale(2, BigDecimal.ROUND_HALF_UP).doubleValue());
     }
 
 
     public void calculate() {
         //麻雀算法迭代次数
         int t = 1;
-        BigDecimal lastFg = updateMap.get("fg");
-        System.out.println("初始最优点：" + updateMap.get("globalMax").doubleValue());
-        System.out.println("初始最优适应度：" + lastFg.doubleValue());
-        BigDecimal pdMax;
-        BigDecimal temp;
+        double lastFg = (double) updateMap.get("fg");
+        System.out.println("初始最优点：" + updateMap.get("globalMax"));
+        System.out.println("初始最优适应度：" + lastFg);
+        List<Double> pdMax;
+        List<Double> temp;
         while (t <= iterations) {
             r2 = BigDecimal.valueOf(Math.random()).floatValue();
             updateProducerPoint();
-            pdMax = coordinatePoints.get(1).get("x");
+            pdMax = coordinatePoints.get(1);
             for (int i = 2; i <= PD; i++) {
-                temp = coordinatePoints.get(i).get("x");
-                if (f(pdMax).doubleValue() < f(temp).doubleValue()) {
+                temp = coordinatePoints.get(i);
+                if (f(pdMax) < f(temp)) {
                     pdMax = temp;
                 }
             }
@@ -340,8 +381,7 @@ public class SSA {
             rankAndFindLocation();
             t++;
         }
-        System.out.println("迭代完成后最优点：" + updateMap.get("globalMax").doubleValue());
-        System.out.println("迭代完成后最优适应度：" + updateMap.get("fg").doubleValue());
+        System.out.println("迭代完成后最优点：" + updateMap.get("globalMax"));
+        System.out.println("迭代完成后最优适应度：" + updateMap.get("fg"));
     }
-
 }

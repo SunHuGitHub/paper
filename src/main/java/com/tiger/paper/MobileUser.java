@@ -81,13 +81,13 @@ public class MobileUser {
      * 移动用户的速度
      */
     @Setter
-    private float[] speed = {0.5f, 1.0f, 1.5f};
+    private float[] speed = {2.5f, 3.0f, 4.0f};
 
     /**
      * 移动用户移动的时间间隔
      */
     @Setter
-    private float[] timeInterval = {1.0f, 2.0f, 3.0f};
+    private float[] timeInterval = {2.0f, 4.0f, 6.0f};
 
     /**
      * 任务执行时间（它是一个累计值，每执行一个任务，这里时间会累加）
