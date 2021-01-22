@@ -82,9 +82,8 @@ public class MECRunner {
         //初始化移动用户的 Random Walk Model 即预定路线
         initMobileConf();
 
-        reFreshMobileUplinkRate(mobileUsers.get(0));
 
-        new SSA(100, 300, 0.2f, 0.1f, 0.8f, mobileUsers).calculate();
+        new SSA(100, 300, 0.2f, 0.1f, 0.8f, mobileUsers, edgeSettings).calculate();
     }
 
     /**
@@ -96,7 +95,7 @@ public class MECRunner {
 //        }
         //这里只关心第一个用户
         MobileUser mobileUser = mobileUsers.get(0);
-        mobileUser.setUplinkRate(getUplinkRate(mobileUser));
+        mobileUser.setInitUplinkRate(getUplinkRate(mobileUser));
     }
 
     /**
@@ -168,69 +167,6 @@ public class MECRunner {
             //将原先距离修改为新的移动点的距离
             user.setDistance(((float) newDistance));
         }
-    }
-
-    /**
-     * @param mobileUser 当前移动用户
-     * @return 刷新上传速率
-     */
-    private static void reFreshMobileUplinkRate(MobileUser mobileUser) {
-        double execTime = mobileUser.getExecTime();
-        double sumW = BigDecimal.valueOf(0.0d).doubleValue();
-
-        for (MobileUser user : mobileUsers) {
-            if (mobileUser.getId().intValue() != user.getId().intValue()) {
-                sumW += BigDecimal.valueOf(user.getTransPower() * BigDecimal.valueOf(Math.pow(user.getDistance(), -edgeSettings.getEta())).doubleValue()).doubleValue();
-//                sumW += BigDecimal.valueOf(user.getTransPower() * BigDecimal.valueOf(Math.pow(calculateDistance(user, execTime), -edgeSettings.getEta())).doubleValue()).doubleValue();
-            }
-        }
-        //根据用户的执行时间 计算出离基站的距离
-        int distance = calculateDistance(mobileUser, execTime);
-
-        mobileUser.getUplinkDistance().add(distance);
-
-        //上传速率公式为香农公式  见 上传速率公式.png
-        if (edgeSettings.getBackgroundNoisePower() > 0) {
-            //backgroundNoisePower为 W 时
-            mobileUser.setUplinkRate(BigDecimal.valueOf(edgeSettings.getBandwidth() *
-                    BigDecimal.valueOf((BigDecimal.valueOf(Math.log(1 + (BigDecimal.valueOf(mobileUser.getTransPower() * BigDecimal.valueOf(Math.pow(distance, -edgeSettings.getEta())).doubleValue())).doubleValue()
-                            / BigDecimal.valueOf((edgeSettings.getBackgroundNoisePower() + sumW)).doubleValue())).doubleValue()
-                            / BigDecimal.valueOf(Math.log(2)).doubleValue())).doubleValue()).setScale(0, BigDecimal.ROUND_HALF_UP).doubleValue());
-            ;
-        } else {
-            //backgroundNoisePower 为 dbm 时
-            mobileUser.setUplinkRate(BigDecimal.valueOf(edgeSettings.getBandwidth() *
-                    (BigDecimal.valueOf(Math.log(1 + (BigDecimal.valueOf(mobileUser.getTransPower() * BigDecimal.valueOf(Math.pow(distance, -edgeSettings.getEta())).doubleValue()).doubleValue())
-                            / BigDecimal.valueOf((BigDecimal.valueOf(Math.pow(10, edgeSettings.getBackgroundNoisePower() / 10.0)).doubleValue() / 1000 + sumW)).doubleValue())).doubleValue()
-                            / BigDecimal.valueOf(Math.log(2)).doubleValue())).setScale(0, BigDecimal.ROUND_HALF_UP).doubleValue());
-        }
-
-    }
-
-    /**
-     * @param mobileUser 当前移动用户
-     * @param execTime   执行时间
-     * @return 计算离基站多远
-     */
-    private static int calculateDistance(MobileUser mobileUser, double execTime) {
-        List<Map<String, Object>> mobileConf = mobileUser.getMobileConf();
-        double timeNum = 0.0d;
-        int i = 0;
-        //找到 execTime 所在哪个区间 这样就能算出 这时其他移动用户离基站距离 以及 功率
-        for (; i < mobileConf.size(); i++) {
-            double time = Double.valueOf(mobileConf.get(i).get("time").toString());
-            if (time + timeNum < execTime) {
-                timeNum += time;
-            } else {
-                break;
-            }
-        }
-        Map<String, Object> mobileMap = mobileConf.get(i);
-        float startingPoint = Float.valueOf(mobileMap.get("startingPoint").toString());
-        float speed = Float.valueOf(mobileMap.get("speed").toString());
-        int degree = Integer.valueOf(mobileMap.get("degree").toString());
-        double time = execTime - timeNum;
-        return (int) Math.sqrt(Math.pow(startingPoint, 2) + Math.pow(speed * time, 2) - 2 * startingPoint * speed * time * Float.valueOf(df.format(Math.cos(Math.toRadians(degree)))));
     }
 
 

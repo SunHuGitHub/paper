@@ -60,10 +60,12 @@ public class MobileUser {
     private Float beta;
 
     /**
-     * 上传速率
+     * 初始上传速率
      */
     @Setter
-    private Double uplinkRate;
+    private Double initUplinkRate;
+    @Setter
+    private Double updatingUplinkRate;
 
     /**
      * 上传任务时距离MEC的距离 第一次就是初始化的  之后每一次更改 都是在reFreshMobileUplinkRate方法里设置
