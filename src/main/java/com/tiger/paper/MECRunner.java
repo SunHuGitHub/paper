@@ -6,6 +6,7 @@ import com.google.common.cache.CacheBuilder;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.redis.core.RedisTemplate;
 
+import java.io.*;
 import java.math.BigDecimal;
 import java.math.RoundingMode;
 import java.text.DecimalFormat;
@@ -40,7 +41,25 @@ public class MECRunner {
     private static SSA ssa;
     private static SA sa;
     private static SSASA ssasa;
+    private static List<Integer> taskCollec = new ArrayList<>(TASKNUM);
 
+    static {
+        InputStreamReader isr = null;
+        try {
+            isr = new InputStreamReader(new FileInputStream(new File("D:\\work_sapce_IDEA\\paper\\src\\main\\java\\com\\tiger\\paper\\data.txt")), "utf-8");
+            BufferedReader bufferedReader = new BufferedReader(isr);
+            String s;
+            while ((s = bufferedReader.readLine()) != null) {
+                taskCollec.add(Integer.parseInt(s) * 8192);
+            }
+        } catch (UnsupportedEncodingException e) {
+            e.printStackTrace();
+        } catch (FileNotFoundException e) {
+            e.printStackTrace();
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+    }
 
     public static void main(String[] args) throws InterruptedException {
 
@@ -90,13 +109,9 @@ public class MECRunner {
         initMobileUser();
         //初始化移动用户的 Random Walk Model 即预定路线
         initMobileConf();
-        int totalComputingDatas;
         List<Double> ssaRes = Collections.synchronizedList(new ArrayList<>(TASKNUM));
         List<Double> saRes = Collections.synchronizedList(new ArrayList<>(TASKNUM));
-        List<Integer> taskCollec = new ArrayList<>(TASKNUM);
-        for (int i = 0; i < TASKNUM; i++) {
-            taskCollec.add(taskDataSize[random.nextInt(taskDataSize.length)] * 8192);
-        }
+
         MobileUser mobileUser = mobileUsers.get(0);
         mobileUsers.remove(0);
 //        for (int i = 0; i < TASKNUM; i++) {
@@ -107,14 +122,13 @@ public class MECRunner {
 //            saRes.add(sa.calculate());
 //        }
 
-        new SSASA(100, 500, 0.2f, 0.1f, 0.8f, JSONObject.parseObject(JSONObject.toJSONString(mobileUser), MobileUser.class), mobileUsers, edgeSettings, taskDataSize[random.nextInt(taskDataSize.length)] * 8192).calculate();
         for (int j = 0; j < 6; j++) {
 //            ExecutorService ssaThreadPool = Executors.newFixedThreadPool(10);
 //            CountDownLatch ssaCountDown = new CountDownLatch(TASKNUM);
             ExecutorService saThreadPool = Executors.newFixedThreadPool(8);
             CountDownLatch saCountdown = new CountDownLatch(TASKNUM);
             for (int i = 0; i < TASKNUM; i++) {
-//                int finalI = i;
+                int finalI = i;
 //                ssaThreadPool.execute(() -> {
 //                    ssa = new SSA(100, 500, 0.2f, 0.1f, 0.8f, JSONObject.parseObject(JSONObject.toJSONString(mobileUser), MobileUser.class), mobileUsers, edgeSettings, taskDataSize[random.nextInt(taskDataSize.length)] * 8192);
 //                    ssaRes.add(ssa.calculate());
@@ -123,7 +137,7 @@ public class MECRunner {
 //                });
 //
                 saThreadPool.execute(() -> {
-                    sa = new SA(1000d, 1d, 0.9d, 500, JSONObject.parseObject(JSONObject.toJSONString(mobileUser), MobileUser.class), mobileUsers, edgeSettings, taskDataSize[random.nextInt(taskDataSize.length)] * 8192);
+                    sa = new SA(1000d, 1d, 0.9d, 500, JSONObject.parseObject(JSONObject.toJSONString(mobileUser), MobileUser.class), mobileUsers, edgeSettings, taskCollec.get(finalI));
                     saRes.add(sa.calculate());
                     saCountdown.countDown();
                 });
@@ -142,10 +156,7 @@ public class MECRunner {
                 sum += saRe;
             }
             System.out.println("sa：" + TASKNUM + "：" + BigDecimal.valueOf(sum / TASKNUM).setScale(2, RoundingMode.HALF_UP).doubleValue());
-            TASKNUM = TASKNUM + 10;
-            for (int i = 0; i < 10; i++) {
-                taskCollec.add(taskDataSize[random.nextInt(taskDataSize.length)] * 8192);
-            }
+            TASKNUM = TASKNUM + 1000;
             ssaRes.clear();
             saRes.clear();
         }
