@@ -50,7 +50,7 @@ public class MECRunner {
         df = new DecimalFormat("0.00");
         //本模型是最小化每个移动用户的costFuntion 即 min costFuntion()
         //任务数据量 单位KB
-        int[] taskDataSize = {1500};
+        int[] taskDataSize = {1500, 1400, 1200};
         int[] cyclesPerBit = {1200};
         //本地计算能力 0.5GHZ  0.8GHZ  1GHZ
         float[] localComputingAbility = {1.5e9f, 1.8e9f, 2e9f};
@@ -93,10 +93,10 @@ public class MECRunner {
         int totalComputingDatas;
         List<Double> ssaRes = Collections.synchronizedList(new ArrayList<>(TASKNUM));
         List<Double> saRes = Collections.synchronizedList(new ArrayList<>(TASKNUM));
-//        List<Integer> taskCollec = new ArrayList<>();
-//        for (int i = 0; i < TASKNUM; i++) {
-//            taskCollec.add(taskDataSize[random.nextInt(taskDataSize.length)] * 8192);
-//        }
+        List<Integer> taskCollec = new ArrayList<>(TASKNUM);
+        for (int i = 0; i < TASKNUM; i++) {
+            taskCollec.add(taskDataSize[random.nextInt(taskDataSize.length)] * 8192);
+        }
         MobileUser mobileUser = mobileUsers.get(0);
         mobileUsers.remove(0);
 //        for (int i = 0; i < TASKNUM; i++) {
@@ -109,28 +109,29 @@ public class MECRunner {
 
 
         for (int j = 0; j < 6; j++) {
-            ExecutorService ssaThreadPool = Executors.newFixedThreadPool(10);
-            CountDownLatch ssaCountDown = new CountDownLatch(TASKNUM);
-//            ExecutorService saThreadPool = Executors.newFixedThreadPool(10);
-//            CountDownLatch saCountdown = new CountDownLatch(TASKNUM);
-            for (int i = 1; i <= TASKNUM; i++) {
-                ssaThreadPool.execute(() -> {
-                    ssa = new SSA(100, 500, 0.2f, 0.1f, 0.8f, JSONObject.parseObject(JSONObject.toJSONString(mobileUser), MobileUser.class), mobileUsers, edgeSettings, taskDataSize[random.nextInt(taskDataSize.length)] * 8192);
-                    ssaRes.add(ssa.calculate());
-                    ssaCountDown.countDown();
-//                    System.out.println("success：" + finalI);
-                });
-//
-//                saThreadPool.execute(() -> {
-//                    sa = new SA(1000d, 1d, 0.9d, 500, JSONObject.parseObject(JSONObject.toJSONString(mobileUser), MobileUser.class), mobileUsers, edgeSettings, taskDataSize[random.nextInt(taskDataSize.length)] * 8192);
-//                    saRes.add(sa.calculate());
-//                    saCountdown.countDown();
+//            ExecutorService ssaThreadPool = Executors.newFixedThreadPool(10);
+//            CountDownLatch ssaCountDown = new CountDownLatch(TASKNUM);
+            ExecutorService saThreadPool = Executors.newFixedThreadPool(8);
+            CountDownLatch saCountdown = new CountDownLatch(TASKNUM);
+            for (int i = 0; i < TASKNUM; i++) {
+//                ssaThreadPool.execute(() -> {
+//                    ssa = new SSA(100, 500, 0.2f, 0.1f, 0.8f, JSONObject.parseObject(JSONObject.toJSONString(mobileUser), MobileUser.class), mobileUsers, edgeSettings, taskDataSize[random.nextInt(taskDataSize.length)] * 8192);
+//                    ssaRes.add(ssa.calculate());
+//                    ssaCountDown.countDown();
+////                    System.out.println("success：" + finalI);
 //                });
+//
+                int finalI = i;
+                saThreadPool.execute(() -> {
+                    sa = new SA(1000d, 1d, 0.9d, 500, JSONObject.parseObject(JSONObject.toJSONString(mobileUser), MobileUser.class), mobileUsers, edgeSettings, taskCollec.get(finalI));
+                    saRes.add(sa.calculate());
+                    saCountdown.countDown();
+                });
             }
-            ssaCountDown.await();
-            ssaThreadPool.shutdown();
-//            saCountdown.await();
-//            saThreadPool.shutdown();
+//            ssaCountDown.await();
+//            ssaThreadPool.shutdown();
+            saCountdown.await();
+            saThreadPool.shutdown();
             double sum = 0;
             for (Double ssaRe : ssaRes) {
                 sum += ssaRe;
@@ -142,6 +143,9 @@ public class MECRunner {
             }
             System.out.println("sa：" + TASKNUM + "：" + BigDecimal.valueOf(sum / TASKNUM).setScale(2, RoundingMode.HALF_UP).doubleValue());
             TASKNUM = TASKNUM + 1000;
+            for (int i = 0; i < 1000; i++) {
+                taskCollec.add(taskDataSize[random.nextInt(taskDataSize.length)] * 8192);
+            }
             ssaRes.clear();
             saRes.clear();
         }
