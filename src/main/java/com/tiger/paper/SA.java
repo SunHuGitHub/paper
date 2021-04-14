@@ -77,7 +77,7 @@ public class SA {
         while (t > tEnd) {
             //一直迭代
             for (long i = 0; i < l; i++) {
-                double v1 = fTime(temp);
+                double v1 = fEnergy(temp);
                 double random;
                 double val = temp;
                 double v = temp;
@@ -90,7 +90,7 @@ public class SA {
                     }
                 } while (val < 0 || val > 1);
 //                mobileUser = JSONObject.parseObject(JSONObject.toJSONString(mobileUserTemp), MobileUser.class);
-                double v2 = fTime(BigDecimal.valueOf(val).setScale(2, RoundingMode.HALF_UP).doubleValue());
+                double v2 = fEnergy(BigDecimal.valueOf(val).setScale(2, RoundingMode.HALF_UP).doubleValue());
 
                 df = v2 - v1;
                 // 这里是退火算法的精髓（以一定概率接受比现在差的，这样就跳出局部最优解趋于全局最优）
@@ -110,7 +110,7 @@ public class SA {
         }
 //        System.out.println(temp);
 //        System.out.println(fTime(temp));
-        return fTime(temp);
+        return fEnergy(temp);
     }
 
 //    private double fTime(double sparrowIndex) {
@@ -152,7 +152,7 @@ public class SA {
 //        return BigDecimal.valueOf(totalTime).setScale(2, RoundingMode.HALF_UP).doubleValue();
 //    }
 
-    private double fTime(double sparrowIndex) {
+    private double fEnergy(double sparrowIndex) {
         //拿到用户的总任务集合
 //        List<Integer> totalComputingDatas = mobileUser.getTotalComputingDatas();
         //用户计算 1 bit数据所需CPU周期数
