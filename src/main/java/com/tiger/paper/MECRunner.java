@@ -111,6 +111,7 @@ public class MECRunner {
         initMobileConf();
         List<Double> ssaRes = Collections.synchronizedList(new ArrayList<>(TASKNUM));
         List<Double> saRes = Collections.synchronizedList(new ArrayList<>(TASKNUM));
+        List<Double> ssasaRes = Collections.synchronizedList(new ArrayList<>(TASKNUM));
 
         MobileUser mobileUser = mobileUsers.get(0);
         mobileUsers.remove(0);
@@ -121,12 +122,13 @@ public class MECRunner {
 //            sa = new SA(1000d, 1d, 0.9d, 500, new ArrayList<>(mobileUsers), edgeSettings, totalComputingDatas);
 //            saRes.add(sa.calculate());
 //        }
-
         for (int j = 0; j < 6; j++) {
 //            ExecutorService ssaThreadPool = Executors.newFixedThreadPool(10);
 //            CountDownLatch ssaCountDown = new CountDownLatch(TASKNUM);
-            ExecutorService saThreadPool = Executors.newFixedThreadPool(8);
-            CountDownLatch saCountdown = new CountDownLatch(TASKNUM);
+//            ExecutorService saThreadPool = Executors.newFixedThreadPool(8);
+//            CountDownLatch saCountdown = new CountDownLatch(TASKNUM);
+            ExecutorService ssasaThreadPool = Executors.newFixedThreadPool(8);
+            CountDownLatch ssasaCountdown = new CountDownLatch(TASKNUM);
             for (int i = 0; i < TASKNUM; i++) {
                 int finalI = i;
 //                ssaThreadPool.execute(() -> {
@@ -136,29 +138,41 @@ public class MECRunner {
 ////                    System.out.println("success：" + finalI);
 //                });
 //
-                saThreadPool.execute(() -> {
-                    sa = new SA(1000d, 1d, 0.9d, 500, JSONObject.parseObject(JSONObject.toJSONString(mobileUser), MobileUser.class), mobileUsers, edgeSettings, taskCollec.get(finalI));
-                    saRes.add(sa.calculate());
-                    saCountdown.countDown();
+//                saThreadPool.execute(() -> {
+//                    sa = new SA(1000d, 1d, 0.9d, 500, JSONObject.parseObject(JSONObject.toJSONString(mobileUser), MobileUser.class), mobileUsers, edgeSettings, taskCollec.get(finalI));
+//                    saRes.add(sa.calculate());
+//                    saCountdown.countDown();
+//                });
+                ssasaThreadPool.execute(() -> {
+                    ssasa = new SSASA(100, 500, 0.2f, 0.1f, 0.8f, JSONObject.parseObject(JSONObject.toJSONString(mobileUser), MobileUser.class), mobileUsers, edgeSettings, taskCollec.get(finalI));
+                    ssasaRes.add(ssasa.calculate());
+                    ssasaCountdown.countDown();
                 });
             }
 //            ssaCountDown.await();
 //            ssaThreadPool.shutdown();
-            saCountdown.await();
-            saThreadPool.shutdown();
+//            saCountdown.await();
+//            saThreadPool.shutdown();
+            ssasaCountdown.await();
+            ssasaThreadPool.shutdown();
             double sum = 0;
-            for (Double ssaRe : ssaRes) {
-                sum += ssaRe;
+//            for (Double ssaRe : ssaRes) {
+//                sum += ssaRe;
+//            }
+//            System.out.println("ssa：" + TASKNUM + "：" + BigDecimal.valueOf(sum / TASKNUM).setScale(2, RoundingMode.HALF_UP).doubleValue());
+//            sum = 0;
+//            for (Double saRe : saRes) {
+//                sum += saRe;
+//            }
+//            System.out.println("sa：" + TASKNUM + "：" + BigDecimal.valueOf(sum / TASKNUM).setScale(2, RoundingMode.HALF_UP).doubleValue());
+            for (Double ssasaRe : ssasaRes) {
+                sum += ssasaRe;
             }
-            System.out.println("ssa：" + TASKNUM + "：" + BigDecimal.valueOf(sum / TASKNUM).setScale(2, RoundingMode.HALF_UP).doubleValue());
-            sum = 0;
-            for (Double saRe : saRes) {
-                sum += saRe;
-            }
-            System.out.println("sa：" + TASKNUM + "：" + BigDecimal.valueOf(sum / TASKNUM).setScale(2, RoundingMode.HALF_UP).doubleValue());
+            System.out.println("ssasa：" + TASKNUM + "：" + BigDecimal.valueOf(sum / TASKNUM).setScale(2, RoundingMode.HALF_UP).doubleValue());
             TASKNUM = TASKNUM + 1000;
             ssaRes.clear();
             saRes.clear();
+            ssasaRes.clear();
         }
     }
 
