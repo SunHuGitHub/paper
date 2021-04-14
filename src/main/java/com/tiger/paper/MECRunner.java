@@ -29,7 +29,7 @@ public class MECRunner {
     /**
      * 任务数量
      */
-    private static int TASKNUM = 10;
+    private static int TASKNUM = 1000;
     /**
      * 移动用户个数
      */
@@ -46,7 +46,7 @@ public class MECRunner {
     static {
         InputStreamReader isr = null;
         try {
-            isr = new InputStreamReader(new FileInputStream(new File("D:\\work_sapce_IDEA\\paper\\src\\main\\java\\com\\tiger\\paper\\data.txt")), "utf-8");
+            isr = new InputStreamReader(new FileInputStream(new File("E:\\paper\\src\\main\\java\\com\\tiger\\paper\\data.txt")), "utf-8");
             BufferedReader bufferedReader = new BufferedReader(isr);
             String s;
             while ((s = bufferedReader.readLine()) != null) {
