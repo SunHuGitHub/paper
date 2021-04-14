@@ -28,7 +28,7 @@ public class MECRunner {
     /**
      * 任务数量
      */
-    private static int TASKNUM = 1000;
+    private static int TASKNUM = 10;
     /**
      * 移动用户个数
      */
@@ -50,7 +50,7 @@ public class MECRunner {
         df = new DecimalFormat("0.00");
         //本模型是最小化每个移动用户的costFuntion 即 min costFuntion()
         //任务数据量 单位KB
-        int[] taskDataSize = {1500, 1400, 1200};
+        int[] taskDataSize = {1500};
         int[] cyclesPerBit = {1200};
         //本地计算能力 0.5GHZ  0.8GHZ  1GHZ
         float[] localComputingAbility = {1.5e9f, 1.8e9f, 2e9f};
@@ -107,13 +107,14 @@ public class MECRunner {
 //            saRes.add(sa.calculate());
 //        }
 
-
+        new SSASA(100, 500, 0.2f, 0.1f, 0.8f, JSONObject.parseObject(JSONObject.toJSONString(mobileUser), MobileUser.class), mobileUsers, edgeSettings, taskDataSize[random.nextInt(taskDataSize.length)] * 8192).calculate();
         for (int j = 0; j < 6; j++) {
 //            ExecutorService ssaThreadPool = Executors.newFixedThreadPool(10);
 //            CountDownLatch ssaCountDown = new CountDownLatch(TASKNUM);
             ExecutorService saThreadPool = Executors.newFixedThreadPool(8);
             CountDownLatch saCountdown = new CountDownLatch(TASKNUM);
             for (int i = 0; i < TASKNUM; i++) {
+//                int finalI = i;
 //                ssaThreadPool.execute(() -> {
 //                    ssa = new SSA(100, 500, 0.2f, 0.1f, 0.8f, JSONObject.parseObject(JSONObject.toJSONString(mobileUser), MobileUser.class), mobileUsers, edgeSettings, taskDataSize[random.nextInt(taskDataSize.length)] * 8192);
 //                    ssaRes.add(ssa.calculate());
@@ -121,9 +122,8 @@ public class MECRunner {
 ////                    System.out.println("success：" + finalI);
 //                });
 //
-                int finalI = i;
                 saThreadPool.execute(() -> {
-                    sa = new SA(1000d, 1d, 0.9d, 500, JSONObject.parseObject(JSONObject.toJSONString(mobileUser), MobileUser.class), mobileUsers, edgeSettings, taskCollec.get(finalI));
+                    sa = new SA(1000d, 1d, 0.9d, 500, JSONObject.parseObject(JSONObject.toJSONString(mobileUser), MobileUser.class), mobileUsers, edgeSettings, taskDataSize[random.nextInt(taskDataSize.length)] * 8192);
                     saRes.add(sa.calculate());
                     saCountdown.countDown();
                 });
@@ -142,8 +142,8 @@ public class MECRunner {
                 sum += saRe;
             }
             System.out.println("sa：" + TASKNUM + "：" + BigDecimal.valueOf(sum / TASKNUM).setScale(2, RoundingMode.HALF_UP).doubleValue());
-            TASKNUM = TASKNUM + 1000;
-            for (int i = 0; i < 1000; i++) {
+            TASKNUM = TASKNUM + 10;
+            for (int i = 0; i < 10; i++) {
                 taskCollec.add(taskDataSize[random.nextInt(taskDataSize.length)] * 8192);
             }
             ssaRes.clear();

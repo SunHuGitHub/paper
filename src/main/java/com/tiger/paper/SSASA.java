@@ -419,7 +419,7 @@ public class SSASA {
             do {
                 lastFg = updateMap.get("fg");
                 coordinatePointsLast = JSONObject.parseArray(JSONObject.toJSONString(coordinatePoints), Double.class);
-                updateMapLast = JSONObject.parseObject(JSONObject.toJSONString(coordinatePoints), new HashMap<String, Double>().getClass());
+                updateMapLast = JSONObject.parseObject(JSONObject.toJSONString(updateMap), new HashMap<String, Double>().getClass());
                 r2 = BigDecimal.valueOf(Math.random()).floatValue();
                 updateProducerPoint();
                 pdMax = coordinatePoints.get(1);
