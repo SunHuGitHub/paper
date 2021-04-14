@@ -1,10 +1,16 @@
 package com.tiger.paper;
 
+import com.alibaba.fastjson.JSONObject;
+import com.google.common.cache.Cache;
+import com.google.common.cache.CacheBuilder;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.redis.core.RedisTemplate;
+
 import java.math.BigDecimal;
+import java.math.RoundingMode;
 import java.text.DecimalFormat;
 import java.util.*;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
+import java.util.concurrent.*;
 
 /**
  * @author 孙小虎
@@ -14,7 +20,7 @@ public class MECRunner {
     /**
      * 移动用户集合
      */
-    private static List<MobileUser> mobileUsers;
+    private static List<MobileUser> mobileUsers = new ArrayList<>();
     /**
      * 边缘服务器
      */
@@ -22,50 +28,54 @@ public class MECRunner {
     /**
      * 任务数量
      */
-    private static final int TASKNUM = 5;
+    private static int TASKNUM = 2000;
     /**
      * 移动用户个数
      */
-    private static final int USERNUM = 10;
+    private static final int USERNUM = 5;
     /**
      * 格式化小数点
      */
     private static DecimalFormat df;
+    private static SSA ssa;
+    private static SA sa;
+    private static SSASA ssasa;
 
-    public static void main(String[] args) {
+
+    public static void main(String[] args) throws InterruptedException {
 
         //带宽 1MHZ  背景噪声 -100dbm MEC计算能力 5GHZ  路径衰落因子 4  边缘服务器基站范围
-        edgeSettings = new EdgeSettings(3e6f, -100f, 5e9f, 4, 500);
-        mobileUsers = new ArrayList<>();
+        edgeSettings = new EdgeSettings(20e6f, -250f, 4e9f, 2, 500);
+//        mobileUsers = new ArrayList<>();
         df = new DecimalFormat("0.00");
         //本模型是最小化每个移动用户的costFuntion 即 min costFuntion()
         //任务数据量 单位KB
-        int[] taskDataSize = {300, 400, 500, 600};
-        int[] cyclesPerBit = {1000, 1200, 1500};
+        int[] taskDataSize = {1500};
+        int[] cyclesPerBit = {1200};
         //本地计算能力 0.5GHZ  0.8GHZ  1GHZ
-        float[] localComputingAbility = {0.5e9f, 0.8e9f, 1.0e9f};
+        float[] localComputingAbility = {1.5e9f, 1.8e9f, 2e9f};
         //传输功率 0.05w  0.08w  0.1w
-        float[] transPower = {0.05f, 0.08f, 0.1f};
+        float[] transPower = {0.8f, 1f};
         //移动用户对时间的权重 最大为 10。已知时间权重，能耗权重就为 10 - X
         int[] alpha = {2, 5, 8};
         //离基站距离 假设小型基站范围500米  使用户随机在离基站100到400米之间
         int minDistance = edgeSettings.getSignalRange() - 400;
-        int maxDistance = edgeSettings.getSignalRange() - 100;
+        int maxDistance = edgeSettings.getSignalRange() - 200;
 
         Random random = new Random();
 
         int alphaIndex = random.nextInt(alpha.length);
         //任务集合
-        List<Integer> totalComputingDatas = new ArrayList<>();
-        for (int i = 1; i <= TASKNUM; i++) {
-            //1KB = 1024B = 1024 * 8 = 8192b
-            totalComputingDatas.add(taskDataSize[random.nextInt(taskDataSize.length)] * 8192);
-        }
+//        List<Integer> totalComputingDatas = new ArrayList<>();
+//        for (int i = 1; i <= 1; i++) {
+//            //1KB = 1024B = 1024 * 8 = 8192b
+//            totalComputingDatas.add(taskDataSize[random.nextInt(taskDataSize.length)] * 8192);
+//        }
 
         for (int i = 1; i <= USERNUM; i++) {
             //随机每个用户离基站的距离
             float distance = (random.nextInt(maxDistance - minDistance + 1) + minDistance) * 1.0f;
-            mobileUsers.add(new MobileUser(i, totalComputingDatas,
+            mobileUsers.add(new MobileUser(i, null,
                     distance,
                     cyclesPerBit[random.nextInt(cyclesPerBit.length)],
                     localComputingAbility[random.nextInt(localComputingAbility.length)],
@@ -76,14 +86,65 @@ public class MECRunner {
                     (int) distance));
 
         }
-
         //初始化所有移动用户的上传速率
         initMobileUser();
         //初始化移动用户的 Random Walk Model 即预定路线
         initMobileConf();
+        int totalComputingDatas;
+        List<Double> ssaRes = Collections.synchronizedList(new ArrayList<>(TASKNUM));
+        List<Double> saRes = Collections.synchronizedList(new ArrayList<>(TASKNUM));
+//        List<Integer> taskCollec = new ArrayList<>();
+//        for (int i = 0; i < TASKNUM; i++) {
+//            taskCollec.add(taskDataSize[random.nextInt(taskDataSize.length)] * 8192);
+//        }
+        MobileUser mobileUser = mobileUsers.get(0);
+        mobileUsers.remove(0);
+//        for (int i = 0; i < TASKNUM; i++) {
+//            totalComputingDatas = taskDataSize[random.nextInt(taskDataSize.length)] * 8192;
+//            ssa = new SSA(200, 500, 0.3f, 0.2f, 0.8f, new ArrayList<>(mobileUsers), edgeSettings, totalComputingDatas);
+//            ssaRes.add(ssa.calculate());
+//            sa = new SA(1000d, 1d, 0.9d, 500, new ArrayList<>(mobileUsers), edgeSettings, totalComputingDatas);
+//            saRes.add(sa.calculate());
+//        }
 
 
-        new SSA(100, 300, 0.2f, 0.1f, 0.8f, mobileUsers, edgeSettings).calculate();
+
+//            ExecutorService saThreadPool = Executors.newFixedThreadPool(8);
+//            CountDownLatch saCountdown = new CountDownLatch(TASKNUM);
+        for (int j = 0; j < 6; j++) {
+            ExecutorService ssaThreadPool = Executors.newFixedThreadPool(8);
+            CountDownLatch ssaCountDown = new CountDownLatch(TASKNUM);
+            for (int i = 1; i <= TASKNUM; i++) {
+                int finalI = i;
+                ssaThreadPool.execute(() -> {
+                    ssa = new SSA(100, 1000, 0.2f, 0.1f, 0.8f, JSONObject.parseObject(JSONObject.toJSONString(mobileUser), MobileUser.class), mobileUsers, edgeSettings, taskDataSize[random.nextInt(taskDataSize.length)] * 8192);
+                    ssaRes.add(ssa.calculate());
+                    ssaCountDown.countDown();
+//                    System.out.println("success：" + finalI);
+                });
+//            JSONObject.parseObject(JSONObject.toJSONString(mobileUser), MobileUser.class)
+//                saThreadPool.execute(() -> {
+//                    sa = new SA(1000d, 1d, 0.9d, 1000, mobileUser,mobileUsers, edgeSettings, taskCollec.get(finalI));
+//                    saRes.add(sa.calculate());
+//                    saCountdown.countDown();
+//                });
+            }
+            ssaCountDown.await();
+            ssaThreadPool.shutdown();
+//            saCountdown.await();
+//            saThreadPool.shutdown();
+            double sum = 0;
+            for (Double ssaRe : ssaRes) {
+                sum += ssaRe;
+            }
+            System.out.println("ssa：" + TASKNUM + "：" + BigDecimal.valueOf(sum / TASKNUM).setScale(2, RoundingMode.HALF_UP).doubleValue());
+            sum = 0;
+            for (Double saRe : saRes) {
+                sum += saRe;
+            }
+            System.out.println("sa：" + TASKNUM + "：" + BigDecimal.valueOf(sum / TASKNUM).setScale(2, RoundingMode.HALF_UP).doubleValue());
+            TASKNUM = TASKNUM + 1000;
+        }
     }
 
     /**
@@ -133,44 +194,58 @@ public class MECRunner {
         Random random = new Random();
         //这里只移动第一个用户 其他用户考虑静止
         MobileUser user = mobileUsers.get(0);
+        float v;
+        float t;
         for (int i = 0; i < 5; i++) {
-            int newDistance;
-            //0 - 360° 之间随机
-            int degree;
-            float v = user.getSpeed()[random.nextInt(user.getSpeed().length)];
-            float t = user.getTimeInterval()[random.nextInt(user.getTimeInterval().length)];
-            double step = v * t;
             HashMap<String, Object> mobileConf = new HashMap<>();
-            do {
-                degree = random.nextInt(361);
-                if (degree == 0 || degree == 360) {
-                    newDistance = (int) (user.getDistance() + step);
-                } else if (degree == 180) {
-                    newDistance = (int) Math.abs(user.getDistance() - step);
-                } else {
-                    if (degree < 180) {
-                        newDistance = (int) Math.sqrt(Math.pow(user.getDistance(), 2) + Math.pow(step, 2) - 2 * user.getDistance() * step * Float.valueOf(df.format(Math.cos(Math.toRadians(180 - degree)))));
-                        mobileConf.put("degree", 180 - degree);
-                    } else {
-                        newDistance = (int) Math.sqrt(Math.pow(user.getDistance(), 2) + Math.pow(step, 2) - 2 * user.getDistance() * step * Float.valueOf(df.format(Math.cos(Math.toRadians(degree - 180)))));
-                        mobileConf.put("degree", degree - 180);
-                    }
-                }
-            } while (newDistance > edgeSettings.getSignalRange());
-
-            //这里说明移动后距离没超过MEC的信号范围
-            mobileConf.put("startingPoint", user.getDistance());
+            v = user.getSpeed()[random.nextInt(user.getSpeed().length)];
+            t = user.getTimeInterval()[random.nextInt(user.getTimeInterval().length)];
+            Float preDistance = user.getDistance();
+            mobileConf.put("startingPoint", preDistance);
             mobileConf.put("speed", v);
             mobileConf.put("time", t);
-
             user.getMobileConf().add(mobileConf);
             //将原先距离修改为新的移动点的距离
+            int sign = 1;
+            if ((i & 1) != 0) {
+                sign = -1;
+            }
+            int newDistance = (int) (preDistance + sign * t * v);
             user.setDistance(((float) newDistance));
         }
-    }
-
-
-    private static void SSA() {
-
+//        for (int i = 0; i < 5; i++) {
+//            int newDistance;
+//            //0 - 360° 之间随机
+//            int degree;
+//            float v = user.getSpeed()[random.nextInt(user.getSpeed().length)];
+//            float t = user.getTimeInterval()[random.nextInt(user.getTimeInterval().length)];
+//            double step = v * t;
+//            HashMap<String, Object> mobileConf = new HashMap<>();
+//            do {
+//                degree = random.nextInt(361);
+//                if (degree == 0 || degree == 360) {
+//                    newDistance = (int) (user.getDistance() + step);
+//                } else if (degree == 180) {
+//                    newDistance = (int) Math.abs(user.getDistance() - step);
+//                } else {
+//                    if (degree < 180) {
+//                        newDistance = (int) Math.sqrt(Math.pow(user.getDistance(), 2) + Math.pow(step, 2) - 2 * user.getDistance() * step * Float.valueOf(df.format(Math.cos(Math.toRadians(180 - degree)))));
+//                        mobileConf.put("degree", 180 - degree);
+//                    } else {
+//                        newDistance = (int) Math.sqrt(Math.pow(user.getDistance(), 2) + Math.pow(step, 2) - 2 * user.getDistance() * step * Float.valueOf(df.format(Math.cos(Math.toRadians(degree - 180)))));
+//                        mobileConf.put("degree", degree - 180);
+//                    }
+//                }
+//            } while (newDistance > edgeSettings.getSignalRange());
+//
+//            //这里说明移动后距离没超过MEC的信号范围
+//            mobileConf.put("startingPoint", user.getDistance());
+//            mobileConf.put("speed", v);
+//            mobileConf.put("time", t);
+//
+//            user.getMobileConf().add(mobileConf);
+//            //将原先距离修改为新的移动点的距离
+//            user.setDistance(((float) newDistance));
+//        }
     }
 }

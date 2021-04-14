@@ -1,6 +1,7 @@
 package com.tiger.paper;
 
 import lombok.Getter;
+import lombok.NoArgsConstructor;
 import lombok.Setter;
 import lombok.ToString;
 
@@ -13,10 +14,13 @@ import java.util.Map;
  * @date 2020/8/22 - 23:19
  * 移动用户
  */
-
+@Setter
 @Getter
 @ToString
-public class MobileUser {
+@NoArgsConstructor
+public class MobileUser{
+
+
     /**
      * 移动用户ID
      */
@@ -45,6 +49,10 @@ public class MobileUser {
      * 传输功率（W）
      */
     private Float transPower;
+
+    public void setTotalComputingDatas(List<Integer> totalComputingDatas) {
+        this.totalComputingDatas = totalComputingDatas;
+    }
 
     /**
      * 移动用户效用函数的系数
@@ -81,13 +89,13 @@ public class MobileUser {
      * 移动用户的速度
      */
     @Setter
-    private float[] speed = {0.5f, 1.0f, 1.5f};
+    private float[] speed = {3.5f, 4.5f, 5.5f};
 
     /**
      * 移动用户移动的时间间隔
      */
     @Setter
-    private float[] timeInterval = {1.0f, 2.0f, 3.0f};
+    private float[] timeInterval = {4.0f, 5.0f, 6.5f};
 
     /**
      * 任务执行时间（它是一个累计值，每执行一个任务，这里时间会累加）

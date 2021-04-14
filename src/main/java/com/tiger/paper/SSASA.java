@@ -1,6 +1,5 @@
 package com.tiger.paper;
 
-
 import com.alibaba.fastjson.JSONObject;
 import lombok.NoArgsConstructor;
 
@@ -9,11 +8,11 @@ import java.math.RoundingMode;
 import java.util.*;
 
 /**
- * @author 孙小虎
- * @date 2021/01/14 - 14:42
+ * @author Tiger
+ * @date 2021/4/14 8:36
  */
 @NoArgsConstructor
-public class SSA {
+public class SSASA {
 
     /**
      * 种群数
@@ -67,8 +66,20 @@ public class SSA {
 
     private MobileUser mobileUser;
     private MobileUser mobileUserTemp;
+    /**
+     * 退火系数
+     */
+    private static double q = BigDecimal.valueOf(0.95d).doubleValue();
+    /**
+     * 初始温度
+     */
+    private static double t0 = BigDecimal.valueOf(1000.0d).doubleValue();
+    /**
+     * 退火循环次数
+     */
+    private static final int LOOP = 100;
 
-    public SSA(int speciesNum, int iterations, float PDRatio, float SDRatio, float STRatio, MobileUser mobileUser, List<MobileUser> mobileUsers, EdgeSettings edgeSettings, Integer totalComputingDatas) {
+    public SSASA(int speciesNum, int iterations, float PDRatio, float SDRatio, float STRatio, MobileUser mobileUser, List<MobileUser> mobileUsers, EdgeSettings edgeSettings, Integer totalComputingDatas) {
         this.speciesNum = speciesNum;
         this.iterations = iterations;
         this.PD = (int) (speciesNum * PDRatio);
@@ -116,17 +127,15 @@ public class SSA {
             if (r2 < ST) {
                 r = BigDecimal.valueOf(1 - Math.random()).doubleValue();
                 sparrowIndex = BigDecimal.valueOf(sparrowIndex * Math.exp((-i) / BigDecimal.valueOf((r * iterations)).doubleValue())).setScale(2, BigDecimal.ROUND_HALF_UP).doubleValue();
-                while (sparrowIndex <= 0 || sparrowIndex >= 1) {
-//                    r = BigDecimal.valueOf(1 - Math.random()).doubleValue();
-//                    sparrowIndex = BigDecimal.valueOf(sparrowIndex * Math.exp((-i) / BigDecimal.valueOf((r * iterations)).doubleValue())).setScale(2, BigDecimal.ROUND_HALF_UP).doubleValue();
-                    sparrowIndex = BigDecimal.valueOf((RANDOM.nextInt(101) * 0.01)).setScale(2, BigDecimal.ROUND_HALF_UP).doubleValue();
+                while (sparrowIndex < 0 || sparrowIndex > 1) {
+                    r = BigDecimal.valueOf(1 - Math.random()).doubleValue();
+                    sparrowIndex = BigDecimal.valueOf(sparrowIndex * Math.exp((-i) / BigDecimal.valueOf((r * iterations)).doubleValue())).setScale(2, BigDecimal.ROUND_HALF_UP).doubleValue();
                 }
             } else {
                 //因为是1维 所以L为1
                 sparrowIndex = BigDecimal.valueOf(sparrowIndex + RANDOM.nextGaussian()).setScale(2, BigDecimal.ROUND_HALF_UP).doubleValue();
-                while (sparrowIndex <= 0 || sparrowIndex >= 1) {
-//                    sparrowIndex = BigDecimal.valueOf(sparrowIndex + RANDOM.nextGaussian()).setScale(2, BigDecimal.ROUND_HALF_UP).doubleValue();
-                    sparrowIndex = BigDecimal.valueOf((RANDOM.nextInt(101) * 0.01)).setScale(2, BigDecimal.ROUND_HALF_UP).doubleValue();
+                while (sparrowIndex < 0 || sparrowIndex > 1) {
+                    sparrowIndex = BigDecimal.valueOf(sparrowIndex + RANDOM.nextGaussian()).setScale(2, BigDecimal.ROUND_HALF_UP).doubleValue();
                 }
             }
             coordinatePoints.set(i, sparrowIndex);
@@ -152,18 +161,16 @@ public class SSA {
                 sparrowIndex = BigDecimal.valueOf(RANDOM.nextGaussian() *
                         Math.exp((((updateMap.get("globalMin")) - sparrowIndex) / Math.pow(i, 2))))
                         .setScale(2, BigDecimal.ROUND_HALF_UP).doubleValue();
-                while (sparrowIndex <= 0 || sparrowIndex >= 1) {
-//                    sparrowIndex = BigDecimal.valueOf(RANDOM.nextGaussian() *
-//                            Math.exp((((updateMap.get("globalMin")) - sparrowIndex) / Math.pow(i, 2))))
-//                            .setScale(2, BigDecimal.ROUND_HALF_UP).doubleValue();
-                    sparrowIndex = BigDecimal.valueOf((RANDOM.nextInt(101) * 0.01)).setScale(2, BigDecimal.ROUND_HALF_UP).doubleValue();
+                while (sparrowIndex < 0 || sparrowIndex > 1) {
+                    sparrowIndex = BigDecimal.valueOf(RANDOM.nextGaussian() *
+                            Math.exp((((updateMap.get("globalMin")) - sparrowIndex) / Math.pow(i, 2))))
+                            .setScale(2, BigDecimal.ROUND_HALF_UP).doubleValue();
                 }
             } else {
                 //一维情况下 A+ 要么是1 要么是-1  因为是1维 所以L为1
                 sparrowIndex = BigDecimal.valueOf(pdMax + BigDecimal.valueOf(Math.abs(sparrowIndex - pdMax)).doubleValue() * BigDecimal.valueOf(A[Math.random() > 0.5 ? 1 : 0] * 1).doubleValue()).setScale(2, BigDecimal.ROUND_HALF_UP).doubleValue();
-                while (sparrowIndex <= 0 || sparrowIndex >= 1) {
-//                    sparrowIndex = BigDecimal.valueOf(pdMax + BigDecimal.valueOf(Math.abs(sparrowIndex - pdMax)).doubleValue() * BigDecimal.valueOf(A[Math.random() > 0.5 ? 1 : 0] * 1).doubleValue()).setScale(2, BigDecimal.ROUND_HALF_UP).doubleValue();
-                    sparrowIndex = BigDecimal.valueOf((RANDOM.nextInt(101) * 0.01)).setScale(2, BigDecimal.ROUND_HALF_UP).doubleValue();
+                while (sparrowIndex < 0 || sparrowIndex > 1) {
+                    sparrowIndex = BigDecimal.valueOf(pdMax + BigDecimal.valueOf(Math.abs(sparrowIndex - pdMax)).doubleValue() * BigDecimal.valueOf(A[Math.random() > 0.5 ? 1 : 0] * 1).doubleValue()).setScale(2, BigDecimal.ROUND_HALF_UP).doubleValue();
                 }
             }
             coordinatePoints.set(i, sparrowIndex);
@@ -198,15 +205,13 @@ public class SSA {
                 //在寻优后期, 搜索解趋于稳定, 为了使解的精度更高, 应该减小步长因子。
                 //另外, 初始步长因子越小, 越容易陷入局部极值, 所以应给与较高的初始值, 如0.95
                 sparrowIndex = BigDecimal.valueOf(globalMax + BigDecimal.valueOf(RANDOM.nextGaussian() * BigDecimal.valueOf(Math.abs(sparrowIndex - globalMax)).doubleValue()).doubleValue()).setScale(2, BigDecimal.ROUND_HALF_UP).doubleValue();
-                while (sparrowIndex <= 0 || sparrowIndex >= 1) {
-//                    sparrowIndex = BigDecimal.valueOf(globalMax + BigDecimal.valueOf(RANDOM.nextGaussian() * BigDecimal.valueOf(Math.abs(sparrowIndex - globalMax)).doubleValue()).doubleValue()).setScale(2, BigDecimal.ROUND_HALF_UP).doubleValue();
-                    sparrowIndex = BigDecimal.valueOf((RANDOM.nextInt(101) * 0.01)).setScale(2, BigDecimal.ROUND_HALF_UP).doubleValue();
+                while (sparrowIndex < 0 || sparrowIndex > 1) {
+                    sparrowIndex = BigDecimal.valueOf(globalMax + BigDecimal.valueOf(RANDOM.nextGaussian() * BigDecimal.valueOf(Math.abs(sparrowIndex - globalMax)).doubleValue()).doubleValue()).setScale(2, BigDecimal.ROUND_HALF_UP).doubleValue();
                 }
-            } else if (BigDecimal.valueOf(Math.abs(f - fg)).doubleValue() < 1e-10) {
+            } else if (BigDecimal.valueOf(Math.abs(f - fg)).doubleValue() < 1e-4) {
                 sparrowIndex = BigDecimal.valueOf(sparrowIndex + BigDecimal.valueOf((2 * Math.random() - 1)).doubleValue() * BigDecimal.valueOf((BigDecimal.valueOf(Math.abs(sparrowIndex - globalMin)).doubleValue() / BigDecimal.valueOf((f - fw + 1e-4)).doubleValue())).doubleValue()).setScale(2, BigDecimal.ROUND_HALF_UP).doubleValue();
-                while (sparrowIndex <= 0 || sparrowIndex >= 1) {
-//                    sparrowIndex = BigDecimal.valueOf(sparrowIndex + BigDecimal.valueOf((2 * Math.random() - 1)).doubleValue() * BigDecimal.valueOf((BigDecimal.valueOf(Math.abs(sparrowIndex - globalMin)).doubleValue() / BigDecimal.valueOf((f - fw + 1e-4)).doubleValue())).doubleValue()).setScale(2, BigDecimal.ROUND_HALF_UP).doubleValue();
-                    sparrowIndex = BigDecimal.valueOf((RANDOM.nextInt(101) * 0.01)).setScale(2, BigDecimal.ROUND_HALF_UP).doubleValue();
+                while (sparrowIndex < 0 || sparrowIndex > 1) {
+                    sparrowIndex = BigDecimal.valueOf(sparrowIndex + BigDecimal.valueOf((2 * Math.random() - 1)).doubleValue() * BigDecimal.valueOf((BigDecimal.valueOf(Math.abs(sparrowIndex - globalMin)).doubleValue() / BigDecimal.valueOf((f - fw + 1e-4)).doubleValue())).doubleValue()).setScale(2, BigDecimal.ROUND_HALF_UP).doubleValue();
                 }
             }
             coordinatePoints.set(i, sparrowIndex);
@@ -401,30 +406,52 @@ public class SSA {
     public double calculate() {
         //麻雀算法迭代次数
         int t = 1;
-        double lastFg = updateMap.get("fg");
+        double lastFg;
 //        System.out.println("初始最优点：" + (updateMap.get("globalMax")));
 //        System.out.println("初始最优适应度：" + lastFg);
         double pdMax;
         double temp;
+        double df;
+        int l = 1;
+        List<Double> coordinatePointsLast;
+        HashMap<String, Double> updateMapLast;
         while (t <= iterations) {
-            r2 = BigDecimal.valueOf(Math.random()).floatValue();
-            updateProducerPoint();
-            pdMax = coordinatePoints.get(1);
-            for (int i = 2; i <= PD; i++) {
-                temp = coordinatePoints.get(i);
-                if (fTime(pdMax) > fTime(temp)) {
-                    pdMax = temp;
+            do {
+                lastFg = updateMap.get("fg");
+                coordinatePointsLast = JSONObject.parseArray(JSONObject.toJSONString(coordinatePoints), Double.class);
+                updateMapLast = JSONObject.parseObject(JSONObject.toJSONString(coordinatePoints), new HashMap<String, Double>().getClass());
+                r2 = BigDecimal.valueOf(Math.random()).floatValue();
+                updateProducerPoint();
+                pdMax = coordinatePoints.get(1);
+                for (int i = 2; i <= PD; i++) {
+                    temp = coordinatePoints.get(i);
+                    if (fTime(pdMax) > fTime(temp)) {
+                        pdMax = temp;
+                    }
                 }
-            }
-            updateMap.put("pdMax", pdMax);
-            try {
-                updateScroungerPoint();
-            } catch (NumberFormatException numberFormatException) {
-                continue;
-            }
-            updateSDPoint();
-            //更新完所有的位置后，重新算下最优值等
-            rankAndFindLocation();
+                updateMap.put("pdMax", pdMax);
+                try {
+                    updateScroungerPoint();
+                } catch (NumberFormatException numberFormatException) {
+                    continue;
+                }
+                updateSDPoint();
+                //更新完所有的位置后，重新算下最优值等
+                rankAndFindLocation();
+                //模拟退火思想
+                df = updateMap.get("fg") - lastFg;
+                // > 0 表示当前迭代的适应度值比上一次的大 即当前迭代是较差的解
+                if (df > 0) {
+                    // < 表示不接受这个较差的解  >= 表示接受  此概率受到温度参数的影响, 其值的大小随温度的下降而逐渐减小，使得算法在前期有较大概率跳出局部极值, 而在后期又能具有较高的收敛速度
+                    if (Math.exp((-df) / t0) < Math.random()) {
+                        //不接收较差的解 所以回滚之前的坐标值
+                        coordinatePoints = coordinatePointsLast;
+                        updateMap = updateMapLast;
+                    }
+                }
+                l++;
+            } while (l <= LOOP);
+            t0 *= q;
             t++;
         }
 //        System.out.println("迭代完成后最优点：" + updateMap.get("globalMax"));
