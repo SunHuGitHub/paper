@@ -143,7 +143,7 @@ public class MECRunner {
 //                    saCountdown.countDown();
 //                });
             ssasaThreadPool.execute(() -> {
-                ssasa = new SSASA(100, 500, 0.2f, 0.1f, 0.8f, JSONObject.parseObject(JSONObject.toJSONString(mobileUser), MobileUser.class), mobileUsers, edgeSettings, taskCollec.get(finalI));
+                ssasa = new SSASA(100, 100, 0.2f, 0.1f, 0.8f, JSONObject.parseObject(JSONObject.toJSONString(mobileUser), MobileUser.class), mobileUsers, edgeSettings, taskCollec.get(finalI));
                 ssasaRes.add(ssasa.calculate());
                 ssasaCountdown.countDown();
             });
