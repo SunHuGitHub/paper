@@ -152,7 +152,7 @@ public class SA {
 //        return BigDecimal.valueOf(totalTime).setScale(2, RoundingMode.HALF_UP).doubleValue();
 //    }
 
-        private double fEnergy(double sparrowIndex) {
+    private double fEnergy(double sparrowIndex) {
         //拿到用户的总任务集合
 //        List<Integer> totalComputingDatas = mobileUser.getTotalComputingDatas();
         //用户计算 1 bit数据所需CPU周期数

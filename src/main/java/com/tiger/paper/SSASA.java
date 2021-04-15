@@ -69,11 +69,11 @@ public class SSASA {
     /**
      * 退火系数
      */
-    private static double q = BigDecimal.valueOf(0.95d).doubleValue();
+    private static double q = BigDecimal.valueOf(0.9d).doubleValue();
     /**
      * 初始温度
      */
-    private static double t0 = BigDecimal.valueOf(1000.0d).doubleValue();
+    private static double t0 = BigDecimal.valueOf(100.0d).doubleValue();
     /**
      * 退火循环次数
      */
@@ -421,12 +421,17 @@ public class SSASA {
         double df;
         int l = 1;
         List<Double> coordinatePointsLast;
-        HashMap<String, BigDecimal> updateMapLast;
+//        HashMap<String, BigDecimal> updateMapLast;
+        List<Double> SDTemp;
         while (t <= iterations) {
             do {
                 lastFg = updateMap.get("fg").doubleValue();
-                coordinatePointsLast = JSONObject.parseArray(JSONObject.toJSONString(coordinatePoints), Double.class);
-                updateMapLast = JSONObject.parseObject(JSONObject.toJSONString(updateMap), new HashMap<String, BigDecimal>().getClass());
+                SDTemp = new ArrayList<>();
+                for (int i = PD + 1; i <= speciesNum; i++) {
+                    SDTemp.add(coordinatePoints.get(i));
+                }
+//                coordinatePointsLast = JSONObject.parseArray(JSONObject.toJSONString(coordinatePoints), Double.class);
+//                updateMapLast = JSONObject.parseObject(JSONObject.toJSONString(updateMap), new HashMap<String, BigDecimal>().getClass());
                 r2 = BigDecimal.valueOf(Math.random()).floatValue();
                 updateProducerPoint();
                 pdMax = coordinatePoints.get(1);
@@ -452,13 +457,17 @@ public class SSASA {
                     // < 表示不接受这个较差的解  >= 表示接受  此概率受到温度参数的影响, 其值的大小随温度的下降而逐渐减小，使得算法在前期有较大概率跳出局部极值, 而在后期又能具有较高的收敛速度
                     if (Math.exp((-df) / t0) < Math.random()) {
                         //不接收较差的解 所以回滚之前的坐标值
-                        coordinatePoints = coordinatePointsLast;
-                        updateMap = updateMapLast;
+                        for (int i = PD + 1; i <= speciesNum; i++) {
+                            coordinatePoints.set(i, SDTemp.get(i - 1 - PD));
+                        }
+//                        coordinatePoints = coordinatePointsLast;
+                        rankAndFindLocation();
+//                        updateMap = updateMapLast;
                     }
                 }
-                l++;
+//                l++;
                 t0 *= q;
-            } while (l <= LOOP);
+            } while (t0 >= 1d);
             t0 = t0Temp;
             t++;
         }

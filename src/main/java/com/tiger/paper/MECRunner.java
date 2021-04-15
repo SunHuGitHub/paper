@@ -29,7 +29,7 @@ public class MECRunner {
     /**
      * 任务数量
      */
-    private static int TASKNUM = 100;
+    private static int TASKNUM = 10;
     /**
      * 移动用户个数
      */
@@ -168,7 +168,7 @@ public class MECRunner {
                 sum += ssasaRe;
             }
             System.out.println("ssasa：" + TASKNUM + "：" + BigDecimal.valueOf(sum / TASKNUM).setScale(2, RoundingMode.HALF_UP).doubleValue());
-            TASKNUM = TASKNUM + 100;
+            TASKNUM = TASKNUM + 10;
 //            ssaRes.clear();
 //            saRes.clear();
             ssasaRes.clear();
