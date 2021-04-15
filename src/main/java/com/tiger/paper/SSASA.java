@@ -69,7 +69,7 @@ public class SSASA {
     /**
      * 退火系数
      */
-    private static double q = BigDecimal.valueOf(0.9d).doubleValue();
+    private static double q = BigDecimal.valueOf(0.95d).doubleValue();
     /**
      * 初始温度
      */
@@ -77,7 +77,7 @@ public class SSASA {
     /**
      * 退火循环次数
      */
-    private int LOOP;
+    private static final int LOOP = 100;
 
     public SSASA(int speciesNum, int iterations, float PDRatio, float SDRatio, float STRatio, MobileUser mobileUser, List<MobileUser> mobileUsers, EdgeSettings edgeSettings, Integer totalComputingDatas) {
         this.speciesNum = speciesNum;
@@ -91,7 +91,6 @@ public class SSASA {
         this.mobileUser = mobileUser;
         this.mobileUserTemp = JSONObject.parseObject(JSONObject.toJSONString(mobileUser), MobileUser.class);
         this.totalComputingDatas = totalComputingDatas;
-        this.LOOP = iterations;
         /**
          * 初始化麻雀种群坐标点 这里index是[1,speciesNum] 因为考虑到公式中的i不能为0
          */
@@ -422,7 +421,7 @@ public class SSASA {
         int l = 1;
         List<Double> coordinatePointsLast;
         HashMap<String, BigDecimal> updateMapLast;
-        while (t0 >= 1d) {
+        while (t <= iterations) {
             do {
                 lastFg = updateMap.get("fg").doubleValue();
                 coordinatePointsLast = JSONObject.parseArray(JSONObject.toJSONString(coordinatePoints), Double.class);
@@ -448,7 +447,7 @@ public class SSASA {
                 //模拟退火思想
                 df = updateMap.get("fg").doubleValue() - lastFg;
                 // > 0 表示当前迭代的适应度值比上一次的大 即当前迭代是较差的解
-                if (df >= 0) {
+                if (df > 0) {
                     // < 表示不接受这个较差的解  >= 表示接受  此概率受到温度参数的影响, 其值的大小随温度的下降而逐渐减小，使得算法在前期有较大概率跳出局部极值, 而在后期又能具有较高的收敛速度
                     if (Math.exp((-df) / t0) < Math.random()) {
                         //不接收较差的解 所以回滚之前的坐标值
@@ -459,7 +458,7 @@ public class SSASA {
                 l++;
             } while (l <= LOOP);
             t0 *= q;
-//            t++;
+            t++;
         }
 //        System.out.println("迭代完成后最优点：" + updateMap.get("globalMax"));
 //        System.out.println("迭代完成后最优适应度：" + updateMap.get("fg"));
