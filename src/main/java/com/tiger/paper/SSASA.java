@@ -73,7 +73,8 @@ public class SSASA {
     /**
      * 初始温度
      */
-    private static double t0 = BigDecimal.valueOf(100.0d).doubleValue();
+    private double t0 = BigDecimal.valueOf(100.0d).doubleValue();
+    private double t0Temp;
     /**
      * 退火循环次数
      */
@@ -127,7 +128,7 @@ public class SSASA {
             if (r2 < ST) {
                 r = BigDecimal.valueOf(1 - Math.random()).doubleValue();
                 sparrowIndex = BigDecimal.valueOf(sparrowIndex * Math.exp((-i) / BigDecimal.valueOf((r * iterations)).doubleValue())).setScale(2, BigDecimal.ROUND_HALF_UP).doubleValue();
-                while (sparrowIndex < 0 || sparrowIndex > 1) {
+                while (sparrowIndex < 0 || sparrowIndex >= 1) {
 //                    r = BigDecimal.valueOf(1 - Math.random()).doubleValue();
 //                    sparrowIndex = BigDecimal.valueOf(sparrowIndex * Math.exp((-i) / BigDecimal.valueOf((r * iterations)).doubleValue())).setScale(2, BigDecimal.ROUND_HALF_UP).doubleValue();
                     sparrowIndex = BigDecimal.valueOf((RANDOM.nextInt(101) * 0.01)).setScale(2, BigDecimal.ROUND_HALF_UP).doubleValue();
@@ -135,7 +136,7 @@ public class SSASA {
             } else {
                 //因为是1维 所以L为1
                 sparrowIndex = BigDecimal.valueOf(sparrowIndex + RANDOM.nextGaussian()).setScale(2, BigDecimal.ROUND_HALF_UP).doubleValue();
-                while (sparrowIndex < 0 || sparrowIndex > 1) {
+                while (sparrowIndex < 0 || sparrowIndex >= 1) {
 //                    sparrowIndex = BigDecimal.valueOf(sparrowIndex + RANDOM.nextGaussian()).setScale(2, BigDecimal.ROUND_HALF_UP).doubleValue();
                     sparrowIndex = BigDecimal.valueOf((RANDOM.nextInt(101) * 0.01)).setScale(2, BigDecimal.ROUND_HALF_UP).doubleValue();
                 }
@@ -163,7 +164,7 @@ public class SSASA {
                 sparrowIndex = BigDecimal.valueOf(RANDOM.nextGaussian() *
                         Math.exp((((updateMap.get("globalMin").doubleValue()) - sparrowIndex) / Math.pow(i, 2))))
                         .setScale(2, BigDecimal.ROUND_HALF_UP).doubleValue();
-                while (sparrowIndex < 0 || sparrowIndex > 1) {
+                while (sparrowIndex < 0 || sparrowIndex >= 1) {
 //                    sparrowIndex = BigDecimal.valueOf(RANDOM.nextGaussian() *
 //                            Math.exp((((updateMap.get("globalMin").doubleValue()) - sparrowIndex) / Math.pow(i, 2))))
 //                            .setScale(2, BigDecimal.ROUND_HALF_UP).doubleValue();
@@ -172,7 +173,7 @@ public class SSASA {
             } else {
                 //一维情况下 A+ 要么是1 要么是-1  因为是1维 所以L为1
                 sparrowIndex = BigDecimal.valueOf(pdMax.doubleValue() + BigDecimal.valueOf(Math.abs(sparrowIndex - pdMax.doubleValue())).doubleValue() * BigDecimal.valueOf(A[Math.random() > 0.5 ? 1 : 0] * 1).doubleValue()).setScale(2, BigDecimal.ROUND_HALF_UP).doubleValue();
-                while (sparrowIndex < 0 || sparrowIndex > 1) {
+                while (sparrowIndex < 0 || sparrowIndex >= 1) {
 //                    sparrowIndex = BigDecimal.valueOf(pdMax.doubleValue() + BigDecimal.valueOf(Math.abs(sparrowIndex - pdMax.doubleValue())).doubleValue() * BigDecimal.valueOf(A[Math.random() > 0.5 ? 1 : 0] * 1).doubleValue()).setScale(2, BigDecimal.ROUND_HALF_UP).doubleValue();
                     sparrowIndex = BigDecimal.valueOf((RANDOM.nextInt(101) * 0.01)).setScale(2, BigDecimal.ROUND_HALF_UP).doubleValue();
                 }
@@ -209,13 +210,13 @@ public class SSASA {
                 //在寻优后期, 搜索解趋于稳定, 为了使解的精度更高, 应该减小步长因子。
                 //另外, 初始步长因子越小, 越容易陷入局部极值, 所以应给与较高的初始值, 如0.95
                 sparrowIndex = BigDecimal.valueOf(globalMax.doubleValue() + BigDecimal.valueOf(RANDOM.nextGaussian() * BigDecimal.valueOf(Math.abs(sparrowIndex - globalMax.doubleValue())).doubleValue()).doubleValue()).setScale(2, BigDecimal.ROUND_HALF_UP).doubleValue();
-                while (sparrowIndex < 0 || sparrowIndex > 1) {
+                while (sparrowIndex < 0 || sparrowIndex >= 1) {
 //                    sparrowIndex = BigDecimal.valueOf(globalMax.doubleValue() + BigDecimal.valueOf(RANDOM.nextGaussian() * BigDecimal.valueOf(Math.abs(sparrowIndex - globalMax.doubleValue())).doubleValue()).doubleValue()).setScale(2, BigDecimal.ROUND_HALF_UP).doubleValue();
                     sparrowIndex = BigDecimal.valueOf((RANDOM.nextInt(101) * 0.01)).setScale(2, BigDecimal.ROUND_HALF_UP).doubleValue();
                 }
             } else if (BigDecimal.valueOf(Math.abs(f - fg.doubleValue())).doubleValue() < 1e-4) {
                 sparrowIndex = BigDecimal.valueOf(sparrowIndex + BigDecimal.valueOf((2 * Math.random() - 1)).doubleValue() * BigDecimal.valueOf((BigDecimal.valueOf(Math.abs(sparrowIndex - globalMin.doubleValue())).doubleValue() / BigDecimal.valueOf((f - fw.doubleValue() + 1e-4)).doubleValue())).doubleValue()).setScale(2, BigDecimal.ROUND_HALF_UP).doubleValue();
-                while (sparrowIndex < 0 || sparrowIndex > 1) {
+                while (sparrowIndex < 0 || sparrowIndex >= 1) {
 //                    sparrowIndex = BigDecimal.valueOf(sparrowIndex + BigDecimal.valueOf((2 * Math.random() - 1)).doubleValue() * BigDecimal.valueOf((BigDecimal.valueOf(Math.abs(sparrowIndex - globalMin.doubleValue())).doubleValue() / BigDecimal.valueOf((f - fw.doubleValue() + 1e-4)).doubleValue())).doubleValue()).setScale(2, BigDecimal.ROUND_HALF_UP).doubleValue();
                     sparrowIndex = BigDecimal.valueOf((RANDOM.nextInt(101) * 0.01)).setScale(2, BigDecimal.ROUND_HALF_UP).doubleValue();
                 }
@@ -411,8 +412,8 @@ public class SSASA {
 
     public double calculate() {
         //麻雀算法迭代次数
-        double t0Temp = t0;
         int t = 1;
+        t0Temp = t0;
         double lastFg;
 //        System.out.println("初始最优点：" + (updateMap.get("globalMax")));
 //        System.out.println("初始最优适应度：" + lastFg);
