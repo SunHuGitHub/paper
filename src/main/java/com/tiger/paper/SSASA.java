@@ -69,7 +69,7 @@ public class SSASA {
     /**
      * 退火系数
      */
-    private static double q = BigDecimal.valueOf(0.95d).doubleValue();
+    private static double q = BigDecimal.valueOf(0.9d).doubleValue();
     /**
      * 初始温度
      */
@@ -77,7 +77,7 @@ public class SSASA {
     /**
      * 退火循环次数
      */
-    private static final int LOOP = 100;
+    private int LOOP;
 
     public SSASA(int speciesNum, int iterations, float PDRatio, float SDRatio, float STRatio, MobileUser mobileUser, List<MobileUser> mobileUsers, EdgeSettings edgeSettings, Integer totalComputingDatas) {
         this.speciesNum = speciesNum;
@@ -91,6 +91,7 @@ public class SSASA {
         this.mobileUser = mobileUser;
         this.mobileUserTemp = JSONObject.parseObject(JSONObject.toJSONString(mobileUser), MobileUser.class);
         this.totalComputingDatas = totalComputingDatas;
+        this.LOOP = iterations;
         /**
          * 初始化麻雀种群坐标点 这里index是[1,speciesNum] 因为考虑到公式中的i不能为0
          */
@@ -198,7 +199,7 @@ public class SSASA {
         }
         for (int i = 0; i < sdIndex.size(); i++) {
             double sparrowIndex = coordinatePoints.get(sdIndex.get(i));
-            double f = fTime(sparrowIndex);
+            double f = fEnergy(sparrowIndex);
             BigDecimal fg = updateMap.get("fg");
             BigDecimal fw = updateMap.get("fw");
             BigDecimal globalMax = updateMap.get("globalMax");
@@ -238,19 +239,19 @@ public class SSASA {
         double fw;
         for (int i = 2; i <= speciesNum; i++) {
             sparrowIndex = coordinatePoints.get(i);
-            f = fTime(sparrowIndex);
-            if (i <= PD && fTime(pdMax) < f) {
+            f = fEnergy(sparrowIndex);
+            if (i <= PD && fEnergy(pdMax) < f) {
                 pdMax = sparrowIndex;
             }
-            if (fTime(globalMin) < f) {
+            if (fEnergy(globalMin) < f) {
                 globalMin = sparrowIndex;
             }
-            if (fTime(globalMax) > f) {
+            if (fEnergy(globalMax) > f) {
                 globalMax = sparrowIndex;
             }
         }
-        fg = fTime(globalMax);
-        fw = fTime(globalMin);
+        fg = fEnergy(globalMax);
+        fw = fEnergy(globalMin);
         updateMap = new HashMap<>(16);
         //生产者最优的点
         updateMap.put("pdMax", BigDecimal.valueOf(pdMax));
@@ -300,42 +301,42 @@ public class SSASA {
 ////        }
 //        return BigDecimal.valueOf(mobileUser.getAlpha() * totalTime + mobileUser.getBeta() * (localExeEnergy + uplinkEnergy)).setScale(2, BigDecimal.ROUND_HALF_UP).doubleValue();
 //    }
-    private double fTime(double sparrowIndex) {
-        //拿到用户的总任务集合
-//        List<Integer> totalComputingDatas = mobileUser.getTotalComputingDatas();
-        //用户计算 1 bit数据所需CPU周期数
-        Integer cyclesPerBit = mobileUser.getCyclesPerBit();
-        //用户本地计算能力
-        Float localComputingAbility = mobileUser.getLocalComputingAbility();
-        //      本地执行时间    卸载时间      任务上传时间      上传数据大小          本地执行能耗          上传能量           trueTime = Math.max(localExeTime, offloadTime);
-        double localExeTime, offloadTime, uplinkTime, uplinkComputingData, localExeEnergy = 0.0d, uplinkEnergy = 0.0d, trueTime = 0.0d;
-//        for (int i = 0; i < totalComputingDatas.size(); i++) {
-        //上传数据大小
-        uplinkComputingData = totalComputingDatas * sparrowIndex;
-        //本地执行时间
-        localExeTime = BigDecimal.valueOf(((totalComputingDatas - uplinkComputingData) * cyclesPerBit) / localComputingAbility).setScale(3, BigDecimal.ROUND_HALF_UP).doubleValue();
-//        localExeEnergy = (totalComputingDatas - uplinkComputingData) * cyclesPerBit * Math.pow(mobileUser.getLocalComputingAbility(), 2) * 1e-22;
-//        if (i != 0) {
-        // i 等于 0 表示 一开始卸载任务    i != 0 表示用户处于移动状态中  所以要重新刷新上传速率
-//            reFreshUpdatingUplinkRate(mobileUser);
-//            uplinkTime = BigDecimal.valueOf(uplinkComputingData / mobileUser.getUpdatingUplinkRate()).doubleValue();
-//        } else {
-//        }
-//        offloadTime = uplinkTime + BigDecimal.valueOf(uplinkComputingData * cyclesPerBit / edgeSettings.getMecComputingAbility()).doubleValue();
-//        trueTime = BigDecimal.valueOf(trueTime + Math.max(localExeTime, offloadTime)).setScale(2, BigDecimal.ROUND_HALF_UP).doubleValue();
-        double execTime = mobileUser.getExecTime();
-        Double updatingUplinkRate = mobileUser.getUpdatingUplinkRate();
-        mobileUser.setExecTime(localExeTime);
-        reFreshUpdatingUplinkRate();
-        uplinkTime = BigDecimal.valueOf(uplinkComputingData / mobileUser.getUpdatingUplinkRate()).setScale(3, BigDecimal.ROUND_HALF_UP).doubleValue();
-//        uplinkEnergy = mobileUser.getTransPower() * uplinkTime;
-        double edgeExecTime = BigDecimal.valueOf(uplinkComputingData * cyclesPerBit / edgeSettings.getMecComputingAbility()).setScale(3, BigDecimal.ROUND_HALF_UP).doubleValue();
-        double totalTime = localExeTime + uplinkTime + edgeExecTime;
-        mobileUser.setExecTime(execTime);
-        mobileUser.setUpdatingUplinkRate(updatingUplinkRate);
-//        }
-        return BigDecimal.valueOf(totalTime).setScale(2, RoundingMode.HALF_UP).doubleValue();
-    }
+//    private double fTime(double sparrowIndex) {
+//        //拿到用户的总任务集合
+////        List<Integer> totalComputingDatas = mobileUser.getTotalComputingDatas();
+//        //用户计算 1 bit数据所需CPU周期数
+//        Integer cyclesPerBit = mobileUser.getCyclesPerBit();
+//        //用户本地计算能力
+//        Float localComputingAbility = mobileUser.getLocalComputingAbility();
+//        //      本地执行时间    卸载时间      任务上传时间      上传数据大小          本地执行能耗          上传能量           trueTime = Math.max(localExeTime, offloadTime);
+//        double localExeTime, offloadTime, uplinkTime, uplinkComputingData, localExeEnergy = 0.0d, uplinkEnergy = 0.0d, trueTime = 0.0d;
+////        for (int i = 0; i < totalComputingDatas.size(); i++) {
+//        //上传数据大小
+//        uplinkComputingData = totalComputingDatas * sparrowIndex;
+//        //本地执行时间
+//        localExeTime = BigDecimal.valueOf(((totalComputingDatas - uplinkComputingData) * cyclesPerBit) / localComputingAbility).setScale(3, BigDecimal.ROUND_HALF_UP).doubleValue();
+////        localExeEnergy = (totalComputingDatas - uplinkComputingData) * cyclesPerBit * Math.pow(mobileUser.getLocalComputingAbility(), 2) * 1e-22;
+////        if (i != 0) {
+//        // i 等于 0 表示 一开始卸载任务    i != 0 表示用户处于移动状态中  所以要重新刷新上传速率
+////            reFreshUpdatingUplinkRate(mobileUser);
+////            uplinkTime = BigDecimal.valueOf(uplinkComputingData / mobileUser.getUpdatingUplinkRate()).doubleValue();
+////        } else {
+////        }
+////        offloadTime = uplinkTime + BigDecimal.valueOf(uplinkComputingData * cyclesPerBit / edgeSettings.getMecComputingAbility()).doubleValue();
+////        trueTime = BigDecimal.valueOf(trueTime + Math.max(localExeTime, offloadTime)).setScale(2, BigDecimal.ROUND_HALF_UP).doubleValue();
+//        double execTime = mobileUser.getExecTime();
+//        Double updatingUplinkRate = mobileUser.getUpdatingUplinkRate();
+//        mobileUser.setExecTime(localExeTime);
+//        reFreshUpdatingUplinkRate();
+//        uplinkTime = BigDecimal.valueOf(uplinkComputingData / mobileUser.getUpdatingUplinkRate()).setScale(3, BigDecimal.ROUND_HALF_UP).doubleValue();
+////        uplinkEnergy = mobileUser.getTransPower() * uplinkTime;
+//        double edgeExecTime = BigDecimal.valueOf(uplinkComputingData * cyclesPerBit / edgeSettings.getMecComputingAbility()).setScale(3, BigDecimal.ROUND_HALF_UP).doubleValue();
+//        double totalTime = localExeTime + uplinkTime + edgeExecTime;
+//        mobileUser.setExecTime(execTime);
+//        mobileUser.setUpdatingUplinkRate(updatingUplinkRate);
+////        }
+//        return BigDecimal.valueOf(totalTime).setScale(2, RoundingMode.HALF_UP).doubleValue();
+//    }
 
     /**
      * @return 刷新上传速率
@@ -421,7 +422,7 @@ public class SSASA {
         int l = 1;
         List<Double> coordinatePointsLast;
         HashMap<String, BigDecimal> updateMapLast;
-        while (t <= iterations) {
+        while (t0 >= 1d) {
             do {
                 lastFg = updateMap.get("fg").doubleValue();
                 coordinatePointsLast = JSONObject.parseArray(JSONObject.toJSONString(coordinatePoints), Double.class);
@@ -431,7 +432,7 @@ public class SSASA {
                 pdMax = coordinatePoints.get(1);
                 for (int i = 2; i <= PD; i++) {
                     temp = coordinatePoints.get(i);
-                    if (fTime(pdMax) > fTime(temp)) {
+                    if (fEnergy(pdMax) > fEnergy(temp)) {
                         pdMax = temp;
                     }
                 }
@@ -447,7 +448,7 @@ public class SSASA {
                 //模拟退火思想
                 df = updateMap.get("fg").doubleValue() - lastFg;
                 // > 0 表示当前迭代的适应度值比上一次的大 即当前迭代是较差的解
-                if (df > 0) {
+                if (df >= 0) {
                     // < 表示不接受这个较差的解  >= 表示接受  此概率受到温度参数的影响, 其值的大小随温度的下降而逐渐减小，使得算法在前期有较大概率跳出局部极值, 而在后期又能具有较高的收敛速度
                     if (Math.exp((-df) / t0) < Math.random()) {
                         //不接收较差的解 所以回滚之前的坐标值
@@ -458,11 +459,49 @@ public class SSASA {
                 l++;
             } while (l <= LOOP);
             t0 *= q;
-            t++;
+//            t++;
         }
 //        System.out.println("迭代完成后最优点：" + updateMap.get("globalMax"));
 //        System.out.println("迭代完成后最优适应度：" + updateMap.get("fg"));
         return updateMap.get("fg").doubleValue();
     }
 
+    private double fEnergy(double sparrowIndex) {
+        //拿到用户的总任务集合
+//        List<Integer> totalComputingDatas = mobileUser.getTotalComputingDatas();
+        //用户计算 1 bit数据所需CPU周期数
+        Integer cyclesPerBit = mobileUser.getCyclesPerBit();
+        //用户本地计算能力
+        Float localComputingAbility = mobileUser.getLocalComputingAbility();
+        //      本地执行时间    卸载时间      任务上传时间      上传数据大小          本地执行能耗          上传能量           trueTime = Math.max(localExeTime, offloadTime);
+        double localExeTime, offloadTime, uplinkTime, uplinkComputingData, localExeEnergy = 0.0d, uplinkEnergy = 0.0d, trueTime = 0.0d;
+//        for (int i = 0; i < totalComputingDatas.size(); i++) {
+        //上传数据大小
+        uplinkComputingData = totalComputingDatas * sparrowIndex;
+        //本地执行时间
+        localExeTime = BigDecimal.valueOf(((totalComputingDatas - uplinkComputingData) * cyclesPerBit) / localComputingAbility).setScale(3, BigDecimal.ROUND_HALF_UP).doubleValue();
+        localExeEnergy = (totalComputingDatas - uplinkComputingData) * cyclesPerBit * Math.pow(mobileUser.getLocalComputingAbility(), 2) * 1e-22;
+//        if (i != 0) {
+        // i 等于 0 表示 一开始卸载任务    i != 0 表示用户处于移动状态中  所以要重新刷新上传速率
+//            reFreshUpdatingUplinkRate(mobileUser);
+//            uplinkTime = BigDecimal.valueOf(uplinkComputingData / mobileUser.getUpdatingUplinkRate()).doubleValue();
+//        } else {
+//        }
+//        offloadTime = uplinkTime + BigDecimal.valueOf(uplinkComputingData * cyclesPerBit / edgeSettings.getMecComputingAbility()).doubleValue();
+//        trueTime = BigDecimal.valueOf(trueTime + Math.max(localExeTime, offloadTime)).setScale(2, BigDecimal.ROUND_HALF_UP).doubleValue();
+        double execTime = mobileUser.getExecTime();
+        Double updatingUplinkRate = mobileUser.getUpdatingUplinkRate();
+        mobileUser.setExecTime(localExeTime);
+
+        reFreshUpdatingUplinkRate();
+
+        uplinkTime = BigDecimal.valueOf(uplinkComputingData / mobileUser.getUpdatingUplinkRate()).setScale(3, BigDecimal.ROUND_HALF_UP).doubleValue();
+        uplinkEnergy = mobileUser.getTransPower() * uplinkTime;
+//        double edgeExecTime = BigDecimal.valueOf(uplinkComputingData * cyclesPerBit / edgeSettings.getMecComputingAbility()).setScale(3, BigDecimal.ROUND_HALF_UP).doubleValue();
+//        double totalTime = localExeTime + uplinkTime + edgeExecTime;
+        mobileUser.setExecTime(execTime);
+        mobileUser.setUpdatingUplinkRate(updatingUplinkRate);
+//        }
+        return BigDecimal.valueOf(localExeEnergy + uplinkEnergy).setScale(2, RoundingMode.HALF_UP).doubleValue();
+    }
 }
