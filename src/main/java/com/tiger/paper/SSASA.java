@@ -411,6 +411,7 @@ public class SSASA {
 
     public double calculate() {
         //麻雀算法迭代次数
+        double t0Temp = t0;
         int t = 1;
         double lastFg;
 //        System.out.println("初始最优点：" + (updateMap.get("globalMax")));
@@ -456,8 +457,9 @@ public class SSASA {
                     }
                 }
                 l++;
+                t0 *= q;
             } while (l <= LOOP);
-            t0 *= q;
+            t0 = t0Temp;
             t++;
         }
 //        System.out.println("迭代完成后最优点：" + updateMap.get("globalMax"));
