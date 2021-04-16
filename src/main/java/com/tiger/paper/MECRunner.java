@@ -47,7 +47,7 @@ public class MECRunner {
         InputStreamReader isr = null;
         try {
             isr = new InputStreamReader(new FileInputStream(new File("E:\\paper\\src\\main\\java\\com\\tiger\\paper\\data.txt")), "utf-8");
-//            isr = new InputStreamReader(new FileInputStream(new File("E:\\paper\\src\\main\\java\\com\\tiger\\paper\\data.txt")), "utf-8");
+//            isr = new InputStreamReader(new FileInputStream(new File("D:\\work_sapce_IDEA\\paper\\src\\main\\java\\com\\tiger\\paper\\data.txt")), "utf-8");
             BufferedReader bufferedReader = new BufferedReader(isr);
             String s;
             while ((s = bufferedReader.readLine()) != null) {
@@ -144,7 +144,7 @@ public class MECRunner {
 //                    saCountdown.countDown();
 //                });
                 ssasaThreadPool.execute(() -> {
-                    ssasa = new SSASA(100, 100, 0.2f, 0.1f, 0.8f, JSONObject.parseObject(JSONObject.toJSONString(mobileUser), MobileUser.class), mobileUsers, edgeSettings, taskCollec.get(finalI));
+                    ssasa = new SSASA(100, 1000, 0.2f, 0.1f, 0.8f, JSONObject.parseObject(JSONObject.toJSONString(mobileUser), MobileUser.class), mobileUsers, edgeSettings, taskCollec.get(finalI));
                     ssasaRes.add(ssasa.calculate());
                     ssasaCountdown.countDown();
                 });
