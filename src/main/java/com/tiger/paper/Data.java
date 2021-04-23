@@ -3,6 +3,8 @@ package com.tiger.paper;
 import java.io.BufferedReader;
 import java.io.FileNotFoundException;
 import java.io.FileReader;
+import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Random;
 import java.util.Scanner;
 
@@ -73,5 +75,79 @@ public class Data {
         LocalEvaluation = Integer.MAX_VALUE;
         tempEvaluation = Integer.MAX_VALUE;
         random = new Random(System.currentTimeMillis());
+    }
+
+    public static void main(String[] args) {
+//
+//        StringBuilder s = new StringBuilder("[0.916307225090853, 0.903710584902681, 0.85193756908761, 0.983633029018757, 0.853689666202406, 0.925395682455334, 0.884069812746669, 0.871753652260858, 0.956577031997943, 0.999487817983323]");
+//        String substring = s.substring(1, s.length() - 1);
+//        String[] split = substring.toString().split(", ");
+//        ArrayList<Double> doubles = new ArrayList<>();
+//        for (String s1 : split) {
+//            doubles.add(Double.valueOf(s1));
+//        }
+        double f = 1.999999639718497;
+        double fg = 1.999999639718497;
+        double fw = 1.999666093410115;
+        double globalMin = 0.981726888883255;
+        double temp = 0.999399765460382;
+        double globalMax = 0.999399765460382;
+        double sparrowIndex;
+        if (f > fg) {
+            do {
+                sparrowIndex = globalMax + randomNormalDistribution() * Math.abs(globalMax - temp);
+            } while (sparrowIndex < 0 || sparrowIndex > 1);
+        } else if (Math.abs(f - fg) <= 1e-10) {
+            double abs = Math.abs(temp - globalMin);
+            double v = fw - f + 1e-18;
+//            int i = getNumberDecimalDigits(abs);
+//            int j = getNumberDecimalDigits(v);
+//            int t = Math.abs(i - j);
+//            double pow = Math.pow(10, t);
+//            if (i < j) {
+//                v *= pow;
+//            } else if (i > j) {
+//                abs *= pow;
+//            }
+            double v1 = abs / v;
+            while (Math.abs(v1) > 10) {
+                v1 /= 10;
+            }
+            do {
+                sparrowIndex = temp + Math.random() * v1;
+            } while (sparrowIndex < 0 || sparrowIndex > 1);
+        }
+    }
+
+    private static double randomNormalDistribution() {
+        double u = 0.0d;
+        double v = 0.0d;
+        double w = 0.0d;
+        double c = 0.0d;
+        do {
+            //获得两个（-1,1）的独立随机变量
+            u = Math.random() * 2 - 1.0;
+            v = Math.random() * 2 - 1.0;
+            w = u * u + v * v;
+        } while (w == 0.0 || w >= 1.0);
+        //这里就是 Box-Muller转换
+        c = Math.sqrt((-2 * Math.log(w)) / w);
+        //返回2个标准正态分布的随机数，封装进一个数组返回
+        //当然，因为这个函数运行较快，也可以扔掉一个
+        //return [u*c,v*c];
+        return u * c;
+    }
+
+    private static int getNumberDecimalDigits(Double balance) {
+        int dcimalDigits = 0;
+        String balanceStr = Double.toString(balance);
+        int indexOf = balanceStr.indexOf(".");
+        int e = balanceStr.indexOf('E');
+        if (e == -1) {
+            dcimalDigits = balanceStr.length() - 1 - indexOf;
+        } else {
+            dcimalDigits = e - indexOf - 1 + Integer.parseInt(balanceStr.substring(e + 2));
+        }
+        return dcimalDigits;
     }
 }

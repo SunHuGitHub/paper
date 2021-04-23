@@ -111,17 +111,19 @@ public class SSA {
         double r;
         //麻雀坐标
         double sparrowIndex;
+        double temp;
         for (int i = 1; i <= PD; i++) {
             sparrowIndex = coordinatePoints.get(i);
+            temp = sparrowIndex;
             if (r2 < ST) {
                 r = BigDecimal.valueOf(1 - Math.random()).doubleValue();
                 do {
-                    sparrowIndex = BigDecimal.valueOf(sparrowIndex * Math.exp((-i) / BigDecimal.valueOf((r * iterations)).doubleValue())).setScale(2, BigDecimal.ROUND_HALF_UP).doubleValue();
+                    sparrowIndex = BigDecimal.valueOf(temp * Math.exp((-i) / BigDecimal.valueOf((r * iterations)).doubleValue())).setScale(2, BigDecimal.ROUND_HALF_UP).doubleValue();
                 } while (sparrowIndex <= 0 || sparrowIndex >= 1);
             } else {
                 //因为是1维 所以L为1
                 do {
-                    sparrowIndex = BigDecimal.valueOf(sparrowIndex + randomNormalDistribution()).setScale(2, BigDecimal.ROUND_HALF_UP).doubleValue();
+                    sparrowIndex = BigDecimal.valueOf(temp + randomNormalDistribution()).setScale(2, BigDecimal.ROUND_HALF_UP).doubleValue();
                 } while (sparrowIndex <= 0 || sparrowIndex >= 1);
             }
             coordinatePoints.set(i, sparrowIndex);
@@ -139,20 +141,22 @@ public class SSA {
         double pdMax;
         //麻雀坐标
         double sparrowIndex;
+        double temp;
         for (int i = PD + 1; i <= speciesNum; i++) {
             sparrowIndex = coordinatePoints.get(i);
+            temp = sparrowIndex;
             pdMax = updateMap.get("pdMax");
             if (i > speciesNum * 1.0 / 2) {
 
                 do {
                     sparrowIndex = BigDecimal.valueOf(randomNormalDistribution() *
-                            Math.exp((((updateMap.get("globalMin")) - sparrowIndex) / Math.pow(i, 2))))
+                            Math.exp((((updateMap.get("globalMin")) - temp) / Math.pow(i, 2))))
                             .setScale(2, BigDecimal.ROUND_HALF_UP).doubleValue();
                 } while (sparrowIndex <= 0 || sparrowIndex >= 1);
             } else {
                 //一维情况下 A+ 要么是1 要么是-1  因为是1维 所以L为1
                 do {
-                    sparrowIndex = BigDecimal.valueOf(pdMax + BigDecimal.valueOf(Math.abs(sparrowIndex - pdMax)).doubleValue() * BigDecimal.valueOf(A[Math.random() > 0.5 ? 1 : 0] * 1).doubleValue()).setScale(2, BigDecimal.ROUND_HALF_UP).doubleValue();
+                    sparrowIndex = BigDecimal.valueOf(pdMax + BigDecimal.valueOf(Math.abs(temp - pdMax)).doubleValue() * BigDecimal.valueOf(A[Math.random() > 0.5 ? 1 : 0] * 1).doubleValue()).setScale(2, BigDecimal.ROUND_HALF_UP).doubleValue();
                 } while (sparrowIndex <= 0 || sparrowIndex >= 1);
             }
             coordinatePoints.set(i, sparrowIndex);
@@ -181,17 +185,24 @@ public class SSA {
             double fw = updateMap.get("fw");
             double globalMax = updateMap.get("globalMax");
             double globalMin = updateMap.get("globalMin");
+            double temp = sparrowIndex;
             if (f > fg) {
                 //这里步长也是一个优化点。暂且还没优化
                 //在寻优前期, 为了扩大在解空间整体的搜索范围, 加快寻优速度, 应该采用较大的步长因子；
                 //在寻优后期, 搜索解趋于稳定, 为了使解的精度更高, 应该减小步长因子。
                 //另外, 初始步长因子越小, 越容易陷入局部极值, 所以应给与较高的初始值, 如0.95
                 do {
-                    sparrowIndex = BigDecimal.valueOf(globalMax + BigDecimal.valueOf(randomNormalDistribution() * BigDecimal.valueOf(Math.abs(sparrowIndex - globalMax)).doubleValue()).doubleValue()).setScale(2, BigDecimal.ROUND_HALF_UP).doubleValue();
+                    sparrowIndex = BigDecimal.valueOf(globalMax + BigDecimal.valueOf(randomNormalDistribution() * BigDecimal.valueOf(Math.abs(temp - globalMax)).doubleValue()).doubleValue()).setScale(2, BigDecimal.ROUND_HALF_UP).doubleValue();
                 } while (sparrowIndex <= 0 || sparrowIndex >= 1);
             } else if (BigDecimal.valueOf(Math.abs(f - fg)).doubleValue() < 1e-10) {
+                double abs = Math.abs(temp - globalMin);
+                double v = fw - f + 1e-18;
+                double v1 = abs / v;
+                while (Math.abs(v1) > 10) {
+                    v1 /= 10;
+                }
                 do {
-                    sparrowIndex = BigDecimal.valueOf(sparrowIndex + BigDecimal.valueOf((2 * Math.random() - 1)).doubleValue() * BigDecimal.valueOf((BigDecimal.valueOf(Math.abs(sparrowIndex - globalMin)).doubleValue() / BigDecimal.valueOf((f - fw + 1e-4)).doubleValue())).doubleValue()).setScale(2, BigDecimal.ROUND_HALF_UP).doubleValue();
+                    sparrowIndex = BigDecimal.valueOf(temp + BigDecimal.valueOf((2 * Math.random() - 1)).doubleValue() * BigDecimal.valueOf(v1).doubleValue()).setScale(2, BigDecimal.ROUND_HALF_UP).doubleValue();
                 } while (sparrowIndex <= 0 || sparrowIndex >= 1);
             }
             coordinatePoints.set(i, sparrowIndex);

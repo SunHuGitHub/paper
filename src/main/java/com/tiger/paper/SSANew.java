@@ -9,7 +9,7 @@ import java.util.stream.Collectors;
  * @author Tiger
  * @date 2021/4/22 8:04
  */
-public class SSATS {
+public class SSANew {
     /**
      * 产生多少混沌数值
      */
@@ -91,7 +91,7 @@ public class SSATS {
      */
     private LinkedList<Double> tabooTable;
 
-    public SSATS(int speciesNum, int iterations, double PDRatio, double SDRatio, double ST) {
+    public SSANew(int speciesNum, int iterations, double PDRatio, double SDRatio, double ST) {
         this.speciesNum = speciesNum;
         this.iterations = iterations;
         this.PD = (int) (speciesNum * PDRatio);
@@ -157,7 +157,6 @@ public class SSATS {
             } while (sdPoints.contains(coordinatePoints.get(sdIdx)));
             sdPoints.add(coordinatePoints.get(sdIdx));
         }
-        rankAndFindLocation();
     }
 
 
@@ -188,17 +187,15 @@ public class SSATS {
         double globalMin = updateMap.get("globalMin");
         double sparrowIndex;
         double pdMax = updateMap.get("pdMax");
-        double temp;
         for (int i = 0; i < scPoints.size(); i++) {
             sparrowIndex = scPoints.get(i);
-            temp = sparrowIndex;
             if (i > speciesNumDivideTwo) {
                 do {
-                    sparrowIndex = packagingAccuracy(randomNormalDistribution() * Math.exp((globalMin - temp) / Math.pow(i, 2)));
+                    sparrowIndex = packagingAccuracy(randomNormalDistribution() * Math.exp((globalMin - sparrowIndex) / Math.pow(i, 2)));
                 } while (sparrowIndex < 0 || sparrowIndex > 1);
             } else {
                 do {
-                    sparrowIndex = pdMax + Math.abs(temp - pdMax) * (Math.random() > 0.5 ? 1 : -1);
+                    sparrowIndex = pdMax + Math.abs(sparrowIndex - pdMax) * (Math.random() > 0.5 ? 1 : -1);
                 } while (sparrowIndex < 0 || sparrowIndex > 1);
             }
             scPoints.set(i, packagingAccuracy(sparrowIndex));
@@ -233,7 +230,7 @@ public class SSATS {
                     v1 /= 10;
                 }
                 do {
-                    sparrowIndex = temp + Math.random() * (abs / v);
+                    sparrowIndex = temp + Math.random() * v1;
                 } while (sparrowIndex < 0 || sparrowIndex > 1);
             }
             sdPoints.set(i, packagingAccuracy(sparrowIndex));
@@ -308,51 +305,20 @@ public class SSATS {
     }
 
     private void calculate() {
-        double lastf = 0;
         for (int i = 1; i <= iterations; i++) {
             ω = BigDecimal.ONE.divide(BigDecimal.valueOf(1 + Math.exp(2 * (BigDecimal.valueOf(2L * i / 1000).doubleValue() - 1))), PRECISION, RoundingMode.HALF_UP).doubleValue();
             r2 = Math.random();
             //更新发现者坐标
             updateProducerPoint();
             //更新updateMap中最优的发现者坐标
-            updateProduceMap();
+            rankAndFindLocation();
             //更新追随者坐标
             updateScroungerPoint();
             //更新预警者坐标
             updateSDPoint();
 
             rankAndFindLocation();
-            //禁忌搜索判断
-            if (i != 1) {
-                double pdMax = updateMap.get("pdMax");
-                double historicalBest = updateMap.get("historicalBest");
-                double fpdMax = f(pdMax);
-                double newPdIdx;
-                int n = 1;
-                //禁忌搜索判断条件
-                if (Math.abs(lastf - fpdMax) / fpdMax <= 0.2) {
-                    double tempIdx = pdMax;
-                    double ftempIdx = fpdMax;
-                    while (n <= searchFields) {
-                        do {
-                            newPdIdx = packagingAccuracy(pdMax + (Math.random() > 0.5 ? 1 : -1) * ω * (historicalBest - pdMax));
-                        } while (newPdIdx < 0 || newPdIdx > 1);
-                        if (!tabooTable.contains(newPdIdx)) {
-                            if (f(newPdIdx) > ftempIdx) {
-                                tempIdx = newPdIdx;
-                                ftempIdx = f(newPdIdx);
-                            }
-                            n++;
-                        }
-                    }
-                    modifyUpdateMap(tempIdx);
-                }
-            }
-            double pdMax = updateMap.get("pdMax");
-            liftAndAddTaboo(pdMax);
-            lastf = f(pdMax);
         }
-//        System.out.println(updateMap.get("fg"));
         System.out.println(updateMap.get("globalMax"));
     }
 
@@ -385,7 +351,7 @@ public class SSATS {
 
     public static void main(String[] args) {
         for (int i = 0; i < 10; i++) {
-            SSATS ssats = new SSATS(100, 1000, 0.2, 0.1, 0.8);
+            SSANew ssats = new SSANew(100, 1000, 0.2, 0.1, 0.8);
             ssats.calculate();
         }
     }
