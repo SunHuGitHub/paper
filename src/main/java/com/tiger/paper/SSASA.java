@@ -127,19 +127,14 @@ public class SSASA {
             sparrowIndex = coordinatePoints.get(i);
             if (r2 < ST) {
                 r = BigDecimal.valueOf(1 - Math.random()).doubleValue();
-                sparrowIndex = BigDecimal.valueOf(sparrowIndex * Math.exp((-i) / BigDecimal.valueOf((r * iterations)).doubleValue())).setScale(2, BigDecimal.ROUND_HALF_UP).doubleValue();
-                while (sparrowIndex < 0 || sparrowIndex >= 1) {
-//                    r = BigDecimal.valueOf(1 - Math.random()).doubleValue();
-//                    sparrowIndex = BigDecimal.valueOf(sparrowIndex * Math.exp((-i) / BigDecimal.valueOf((r * iterations)).doubleValue())).setScale(2, BigDecimal.ROUND_HALF_UP).doubleValue();
-                    sparrowIndex = BigDecimal.valueOf((RANDOM.nextInt(101) * 0.01)).setScale(2, BigDecimal.ROUND_HALF_UP).doubleValue();
-                }
+                do {
+                    sparrowIndex = BigDecimal.valueOf(sparrowIndex * Math.exp((-i) / BigDecimal.valueOf((r * iterations)).doubleValue())).setScale(2, BigDecimal.ROUND_HALF_UP).doubleValue();
+                } while (sparrowIndex <= 0 || sparrowIndex >= 1);
             } else {
                 //因为是1维 所以L为1
-                sparrowIndex = BigDecimal.valueOf(sparrowIndex + RANDOM.nextGaussian()).setScale(2, BigDecimal.ROUND_HALF_UP).doubleValue();
-                while (sparrowIndex < 0 || sparrowIndex >= 1) {
-//                    sparrowIndex = BigDecimal.valueOf(sparrowIndex + RANDOM.nextGaussian()).setScale(2, BigDecimal.ROUND_HALF_UP).doubleValue();
-                    sparrowIndex = BigDecimal.valueOf((RANDOM.nextInt(101) * 0.01)).setScale(2, BigDecimal.ROUND_HALF_UP).doubleValue();
-                }
+                do {
+                    sparrowIndex = BigDecimal.valueOf(sparrowIndex + randomNormalDistribution()).setScale(2, BigDecimal.ROUND_HALF_UP).doubleValue();
+                } while (sparrowIndex <= 0 || sparrowIndex >= 1);
             }
             coordinatePoints.set(i, sparrowIndex);
         }
@@ -161,22 +156,18 @@ public class SSASA {
             pdMax = updateMap.get("pdMax");
             if (i > speciesNum * 1.0 / 2) {
 
-                sparrowIndex = BigDecimal.valueOf(RANDOM.nextGaussian() *
-                        Math.exp((((updateMap.get("globalMin").doubleValue()) - sparrowIndex) / Math.pow(i, 2))))
-                        .setScale(2, BigDecimal.ROUND_HALF_UP).doubleValue();
-                while (sparrowIndex < 0 || sparrowIndex >= 1) {
-//                    sparrowIndex = BigDecimal.valueOf(RANDOM.nextGaussian() *
-//                            Math.exp((((updateMap.get("globalMin").doubleValue()) - sparrowIndex) / Math.pow(i, 2))))
-//                            .setScale(2, BigDecimal.ROUND_HALF_UP).doubleValue();
-                    sparrowIndex = BigDecimal.valueOf((RANDOM.nextInt(101) * 0.01)).setScale(2, BigDecimal.ROUND_HALF_UP).doubleValue();
-                }
+                do {
+                    sparrowIndex = BigDecimal.valueOf(randomNormalDistribution() *
+                            Math.exp((((updateMap.get("globalMin").doubleValue()) - sparrowIndex) / Math.pow(i, 2))))
+                            .setScale(2, BigDecimal.ROUND_HALF_UP).doubleValue();
+                } while (sparrowIndex <= 0 || sparrowIndex >= 1);
+
             } else {
                 //一维情况下 A+ 要么是1 要么是-1  因为是1维 所以L为1
-                sparrowIndex = BigDecimal.valueOf(pdMax.doubleValue() + BigDecimal.valueOf(Math.abs(sparrowIndex - pdMax.doubleValue())).doubleValue() * BigDecimal.valueOf(A[Math.random() > 0.5 ? 1 : 0] * 1).doubleValue()).setScale(2, BigDecimal.ROUND_HALF_UP).doubleValue();
-                while (sparrowIndex < 0 || sparrowIndex >= 1) {
-//                    sparrowIndex = BigDecimal.valueOf(pdMax.doubleValue() + BigDecimal.valueOf(Math.abs(sparrowIndex - pdMax.doubleValue())).doubleValue() * BigDecimal.valueOf(A[Math.random() > 0.5 ? 1 : 0] * 1).doubleValue()).setScale(2, BigDecimal.ROUND_HALF_UP).doubleValue();
-                    sparrowIndex = BigDecimal.valueOf((RANDOM.nextInt(101) * 0.01)).setScale(2, BigDecimal.ROUND_HALF_UP).doubleValue();
-                }
+                do {
+                    sparrowIndex = BigDecimal.valueOf(pdMax.doubleValue() + BigDecimal.valueOf(Math.abs(sparrowIndex - pdMax.doubleValue())).doubleValue() * BigDecimal.valueOf(A[Math.random() > 0.5 ? 1 : 0] * 1).doubleValue()).setScale(2, BigDecimal.ROUND_HALF_UP).doubleValue();
+                } while (sparrowIndex <= 0 || sparrowIndex >= 1);
+
             }
             coordinatePoints.set(i, sparrowIndex);
         }
@@ -209,17 +200,14 @@ public class SSASA {
                 //在寻优前期, 为了扩大在解空间整体的搜索范围, 加快寻优速度, 应该采用较大的步长因子；
                 //在寻优后期, 搜索解趋于稳定, 为了使解的精度更高, 应该减小步长因子。
                 //另外, 初始步长因子越小, 越容易陷入局部极值, 所以应给与较高的初始值, 如0.95
-                sparrowIndex = BigDecimal.valueOf(globalMax.doubleValue() + BigDecimal.valueOf(RANDOM.nextGaussian() * BigDecimal.valueOf(Math.abs(sparrowIndex - globalMax.doubleValue())).doubleValue()).doubleValue()).setScale(2, BigDecimal.ROUND_HALF_UP).doubleValue();
-                while (sparrowIndex < 0 || sparrowIndex >= 1) {
-//                    sparrowIndex = BigDecimal.valueOf(globalMax.doubleValue() + BigDecimal.valueOf(RANDOM.nextGaussian() * BigDecimal.valueOf(Math.abs(sparrowIndex - globalMax.doubleValue())).doubleValue()).doubleValue()).setScale(2, BigDecimal.ROUND_HALF_UP).doubleValue();
-                    sparrowIndex = BigDecimal.valueOf((RANDOM.nextInt(101) * 0.01)).setScale(2, BigDecimal.ROUND_HALF_UP).doubleValue();
-                }
+                do {
+                    sparrowIndex = BigDecimal.valueOf(globalMax.doubleValue() + BigDecimal.valueOf(randomNormalDistribution() * BigDecimal.valueOf(Math.abs(sparrowIndex - globalMax.doubleValue())).doubleValue()).doubleValue()).setScale(2, BigDecimal.ROUND_HALF_UP).doubleValue();
+                } while (sparrowIndex <= 0 || sparrowIndex >= 1);
+
             } else if (BigDecimal.valueOf(Math.abs(f - fg.doubleValue())).doubleValue() < 1e-4) {
-                sparrowIndex = BigDecimal.valueOf(sparrowIndex + BigDecimal.valueOf((2 * Math.random() - 1)).doubleValue() * BigDecimal.valueOf((BigDecimal.valueOf(Math.abs(sparrowIndex - globalMin.doubleValue())).doubleValue() / BigDecimal.valueOf((f - fw.doubleValue() + 1e-4)).doubleValue())).doubleValue()).setScale(2, BigDecimal.ROUND_HALF_UP).doubleValue();
-                while (sparrowIndex < 0 || sparrowIndex >= 1) {
-//                    sparrowIndex = BigDecimal.valueOf(sparrowIndex + BigDecimal.valueOf((2 * Math.random() - 1)).doubleValue() * BigDecimal.valueOf((BigDecimal.valueOf(Math.abs(sparrowIndex - globalMin.doubleValue())).doubleValue() / BigDecimal.valueOf((f - fw.doubleValue() + 1e-4)).doubleValue())).doubleValue()).setScale(2, BigDecimal.ROUND_HALF_UP).doubleValue();
-                    sparrowIndex = BigDecimal.valueOf((RANDOM.nextInt(101) * 0.01)).setScale(2, BigDecimal.ROUND_HALF_UP).doubleValue();
-                }
+                do {
+                    sparrowIndex = BigDecimal.valueOf(sparrowIndex + BigDecimal.valueOf((2 * Math.random() - 1)).doubleValue() * BigDecimal.valueOf((BigDecimal.valueOf(Math.abs(sparrowIndex - globalMin.doubleValue())).doubleValue() / BigDecimal.valueOf((f - fw.doubleValue() + 1e-4)).doubleValue())).doubleValue()).setScale(2, BigDecimal.ROUND_HALF_UP).doubleValue();
+                } while (sparrowIndex <= 0 || sparrowIndex >= 1);
             }
             coordinatePoints.set(i, sparrowIndex);
         }
@@ -475,6 +463,25 @@ public class SSASA {
 //        System.out.println("迭代完成后最优点：" + updateMap.get("globalMax"));
 //        System.out.println("迭代完成后最优适应度：" + updateMap.get("fg"));
         return updateMap.get("fg").doubleValue();
+    }
+
+    private double randomNormalDistribution() {
+        double u = 0.0d;
+        double v = 0.0d;
+        double w = 0.0d;
+        double c = 0.0d;
+        do {
+            //获得两个（-1,1）的独立随机变量
+            u = Math.random() * 2 - 1.0;
+            v = Math.random() * 2 - 1.0;
+            w = u * u + v * v;
+        } while (w == 0.0 || w >= 1.0);
+        //这里就是 Box-Muller转换
+        c = Math.sqrt((-2 * Math.log(w)) / w);
+        //返回2个标准正态分布的随机数，封装进一个数组返回
+        //当然，因为这个函数运行较快，也可以扔掉一个
+        //return [u*c,v*c];
+        return u * c;
     }
 
 //    private double fEnergy(double sparrowIndex) {
