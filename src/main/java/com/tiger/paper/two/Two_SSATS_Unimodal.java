@@ -169,37 +169,6 @@ public class Two_SSATS_Unimodal {
         return packagingAccuracy(-Math.pow(x - 1, 2) + 2);
     }
 
-    /**
-     * Σ X^2 -- sphere  单峰函数
-     *
-     * @param xSet 多维 x 集合
-     * @return
-     */
-    private double fSphere(List<Double> xSet) {
-        double sum = 0;
-        for (Double x : xSet) {
-            sum += Math.pow(x, 2);
-        }
-        return packagingAccuracy(sum);
-    }
-
-    /**
-     * Griewank 函数 多峰
-     * @param xSet
-     * @return
-     */
-    private double fGriewank(List<Double> xSet) {
-        double part1 = 0;
-        for (Double x : xSet) {
-            part1 += Math.pow(x, 2) / 4000;
-        }
-        double part2 = 1;
-        for (int i = 0; i < xSet.size(); i++) {
-            part2 *= Math.cos(xSet.get(i) / Math.sqrt(i + 1));
-        }
-        return packagingAccuracy(part1 - part2 + 1);
-    }
-
     private void updateProducerPoint() {
         //麻雀坐标
         double sparrowIndex;
