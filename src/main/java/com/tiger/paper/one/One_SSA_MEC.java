@@ -12,7 +12,7 @@ import java.util.stream.Collectors;
  * @author Tiger
  * @date 2021/4/22 8:04
  */
-public class One_SSA {
+public class One_SSA_MEC {
     /**
      * 控制小数点后几位的精度
      */
@@ -82,7 +82,7 @@ public class One_SSA {
 
     private EdgeSettings edgeSettings;
 
-    public One_SSA(int speciesNum, int iterations, double PDRatio, double SDRatio, double ST, MobileUser mobileUser, List<MobileUser> mobileUsers, EdgeSettings edgeSettings, Integer totalComputingDatas) {
+    public One_SSA_MEC(int speciesNum, int iterations, double PDRatio, double SDRatio, double ST, MobileUser mobileUser, List<MobileUser> mobileUsers, EdgeSettings edgeSettings, Integer totalComputingDatas) {
         this.speciesNum = speciesNum;
         this.iterations = iterations;
         this.PD = (int) (speciesNum * PDRatio);
@@ -296,10 +296,17 @@ public class One_SSA {
                 while (Math.abs(v1) > 1) {
                     v1 /= 10;
                 }
+                int cnt = 1;
                 do {
+                    if (cnt > 50) {
+                        break;
+                    }
                     sparrowIndex = temp + (Math.random() * 2 - 1) * v1;
-//                    System.out.println("死循环");
+                    cnt++;
                 } while (sparrowIndex < 0 || sparrowIndex > 1);
+                if (cnt > 50) {
+                    sparrowIndex = updateMap.get("globalMax");
+                }
             }
             sdPoints.set(i, packagingAccuracy(sparrowIndex));
         }
@@ -418,5 +425,32 @@ public class One_SSA {
         //当然，因为这个函数运行较快，也可以扔掉一个
         //return [u*c,v*c];
         return packagingAccuracy(u * c);
+    }
+
+    private double fEnergy(double sparrowIndex) {
+
+        //用户计算 1 bit数据所需CPU周期数
+        Integer cyclesPerBit = mobileUser.getCyclesPerBit();
+        //用户本地计算能力
+        Float localComputingAbility = mobileUser.getLocalComputingAbility();
+        //      本地执行时间        任务上传时间      上传数据大小          本地执行能耗          上传能量
+        double localExeTime, uplinkTime, uplinkComputingData, localExeEnergy = 0.0d, uplinkEnergy = 0.0d;
+//        for (int i = 0; i < totalComputingDatas.size(); i++) {
+        //上传数据大小
+        uplinkComputingData = totalComputingDatas * sparrowIndex;
+        //本地执行时间
+        localExeTime = BigDecimal.valueOf(((totalComputingDatas - uplinkComputingData) * cyclesPerBit) / localComputingAbility).setScale(3, BigDecimal.ROUND_HALF_UP).doubleValue();
+        localExeEnergy = (totalComputingDatas - uplinkComputingData) * cyclesPerBit * Math.pow(mobileUser.getLocalComputingAbility(), 2) * 1e-22;
+        double execTime = mobileUser.getExecTime();
+        Double updatingUplinkRate = mobileUser.getUpdatingUplinkRate();
+        mobileUser.setExecTime(localExeTime);
+
+        reFreshUpdatingUplinkRate();
+
+        uplinkTime = BigDecimal.valueOf(uplinkComputingData / mobileUser.getUpdatingUplinkRate()).setScale(3, BigDecimal.ROUND_HALF_UP).doubleValue();
+        uplinkEnergy = mobileUser.getTransPower() * uplinkTime;
+        mobileUser.setExecTime(execTime);
+        mobileUser.setUpdatingUplinkRate(updatingUplinkRate);
+        return packagingAccuracy(localExeEnergy + uplinkEnergy);
     }
 }

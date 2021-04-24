@@ -1,11 +1,7 @@
 package com.tiger.paper;
 
 import com.alibaba.fastjson.JSONObject;
-import com.google.common.cache.Cache;
-import com.google.common.cache.CacheBuilder;
-import com.tiger.paper.one.One_SSA;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.data.redis.core.RedisTemplate;
+import com.tiger.paper.one.One_SSA_MEC;
 
 import java.io.*;
 import java.math.BigDecimal;
@@ -39,7 +35,7 @@ public class MECRunner {
      * 格式化小数点
      */
     private static DecimalFormat df;
-    private static One_SSA ssa;
+    private static One_SSA_MEC ssa;
     private static SA sa;
     private static SSASA ssasa;
     private static List<Integer> taskCollec = new ArrayList<>(TASKNUM);
@@ -135,7 +131,7 @@ public class MECRunner {
                 for (int i = 0; i < TASKNUM; i++) {
                     int finalI = i;
                     ssaThreadPool.execute(() -> {
-                        ssa = new One_SSA(100, 100, 0.2d, 0.1d, 0.8d, JSONObject.parseObject(JSONObject.toJSONString(mobileUser), MobileUser.class), mobileUsers, edgeSettings, taskCollec.get(finalI));
+                        ssa = new One_SSA_MEC(100, 500, 0.2d, 0.1d, 0.8d, JSONObject.parseObject(JSONObject.toJSONString(mobileUser), MobileUser.class), mobileUsers, edgeSettings, taskCollec.get(finalI));
                         ssaRes.add(ssa.calculate());
                         ssaCountDown.countDown();
                     });
@@ -161,7 +157,7 @@ public class MECRunner {
                 for (Double ssaRe : ssaRes) {
                     sum += ssaRe;
                 }
-                System.out.println("ssa：" + TASKNUM + "：" + BigDecimal.valueOf(sum / TASKNUM).setScale(2, RoundingMode.HALF_UP).doubleValue());
+                System.out.println("ssa：" + TASKNUM + "：" + BigDecimal.valueOf(sum / TASKNUM).setScale(4, RoundingMode.HALF_UP).doubleValue());
 //            sum = 0;
 //                for (Double saRe : saRes) {
 //                    sum += saRe;
@@ -176,7 +172,7 @@ public class MECRunner {
 //                saRes.clear();
 //                ssasaRes.clear();
             }
-            TASKNUM = 100;
+            TASKNUM = 500;
         }
     }
 

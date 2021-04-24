@@ -1,7 +1,4 @@
-package com.tiger.paper.one;
-
-import com.tiger.paper.EdgeSettings;
-import com.tiger.paper.MobileUser;
+package com.tiger.paper.two;
 
 import java.math.BigDecimal;
 import java.math.RoundingMode;
@@ -11,11 +8,12 @@ import java.util.*;
  * @author Tiger
  * @date 2021/4/22 8:04
  */
-public class One_SSASA {
+public class Two_SSA_Unimodal {
+
     /**
      * 控制小数点后几位的精度
      */
-    private static final int PRECISION = 4;
+    private static final int PRECISION = 15;
     /**
      * 种群大小
      */
@@ -61,6 +59,7 @@ public class One_SSASA {
      * 预警值
      */
     private double r2;
+
     /**
      * speciesNum / 2
      */
@@ -70,27 +69,8 @@ public class One_SSASA {
      */
     private Map<String, Double> updateMap;
 
-    /**
-     * 任务，每个任务单位为（bits）
-     */
-    private Integer totalComputingDatas;
 
-    private List<MobileUser> mobileUsers;
-
-    private MobileUser mobileUser;
-
-    private EdgeSettings edgeSettings;
-
-    /**
-     * 退火系数
-     */
-    private double q;
-    /**
-     * 初始温度
-     */
-    private double t0;
-
-    public One_SSASA(int speciesNum, int iterations, double PDRatio, double SDRatio, double ST, MobileUser mobileUser, List<MobileUser> mobileUsers, EdgeSettings edgeSettings, Integer totalComputingDatas) {
+    public Two_SSA_Unimodal(int speciesNum, int iterations, double PDRatio, double SDRatio, double ST) {
         this.speciesNum = speciesNum;
         this.iterations = iterations;
         this.PD = (int) (speciesNum * PDRatio);
@@ -103,12 +83,6 @@ public class One_SSASA {
         this.speciesNumDivideTwo = speciesNum / 2;
         this.updateMap = new HashMap<>(16);
         this.coordinatePoints = new ArrayList<>(speciesNum);
-        this.mobileUsers = mobileUsers;
-        this.edgeSettings = edgeSettings;
-        this.mobileUser = mobileUser;
-        this.totalComputingDatas = totalComputingDatas;
-        this.q = 0.9d;
-        this.t0 = 1000d;
         double idx;
         for (int i = 1; i <= this.speciesNum; i++) {
             do {
@@ -128,13 +102,7 @@ public class One_SSASA {
         //跟随者
         scPoints = new ArrayList<>(coordinatePoints);
         scPoints.removeAll(pdPoints);
-        while (scPoints.size() < speciesNum - PD) {
-            do {
-                idx = packagingAccuracy(Math.random());
-            }
-            while (idx > 0.8d || idx < 0.2d);
-            scPoints.add(idx);
-        }
+
         //预警者
         for (int i = 0; i < SD; i++) {
             int sdIdx;
@@ -146,100 +114,8 @@ public class One_SSASA {
     }
 
 
-//    private double f(double x) {
-//        return packagingAccuracy(-Math.pow(x - 1, 2) + 2);
-//    }
-
-    private double fTime(double sparrowIndex) {
-
-        //用户计算 1 bit数据所需CPU周期数
-        Integer cyclesPerBit = mobileUser.getCyclesPerBit();
-        //用户本地计算能力
-        Float localComputingAbility = mobileUser.getLocalComputingAbility();
-        //      本地执行时间      任务上传时间      上传数据大小
-        double localExeTime, uplinkTime, uplinkComputingData;
-
-        //上传数据大小
-        uplinkComputingData = totalComputingDatas * sparrowIndex;
-        //本地执行时间
-        localExeTime = BigDecimal.valueOf(((totalComputingDatas - uplinkComputingData) * cyclesPerBit) / localComputingAbility).setScale(3, BigDecimal.ROUND_HALF_UP).doubleValue();
-
-        double execTime = mobileUser.getExecTime();
-        Double updatingUplinkRate = mobileUser.getUpdatingUplinkRate();
-        mobileUser.setExecTime(localExeTime);
-        reFreshUpdatingUplinkRate();
-        uplinkTime = BigDecimal.valueOf(uplinkComputingData / mobileUser.getUpdatingUplinkRate()).setScale(3, BigDecimal.ROUND_HALF_UP).doubleValue();
-
-        double edgeExecTime = BigDecimal.valueOf(uplinkComputingData * cyclesPerBit / edgeSettings.getMecComputingAbility()).setScale(3, BigDecimal.ROUND_HALF_UP).doubleValue();
-        double totalTime = localExeTime + uplinkTime + edgeExecTime;
-        mobileUser.setExecTime(execTime);
-        mobileUser.setUpdatingUplinkRate(updatingUplinkRate);
-
-        return packagingAccuracy(totalTime);
-    }
-
-
-    /**
-     * @return 刷新上传速率
-     */
-    private void reFreshUpdatingUplinkRate() {
-        double execTime = mobileUser.getExecTime();
-        double sumW = BigDecimal.valueOf(0.0d).doubleValue();
-
-        for (MobileUser user : mobileUsers) {
-            sumW += BigDecimal.valueOf(user.getTransPower() * BigDecimal.valueOf(Math.pow(user.getDistance(), -edgeSettings.getEta())).doubleValue()).doubleValue();
-        }
-        //根据用户的执行时间 计算出离基站的距离
-        double distance = calculateDistance(execTime);
-
-        //上传速率公式为香农公式  见 上传速率公式.png
-        if (edgeSettings.getBackgroundNoisePower() > 0) {
-            //backgroundNoisePower为 W 时
-            mobileUser.setUpdatingUplinkRate(packagingAccuracy(edgeSettings.getBandwidth() *
-                    (Math.log(1 + (mobileUser.getTransPower() * Math.pow(distance, -edgeSettings.getEta()))
-                            / (edgeSettings.getBackgroundNoisePower() + sumW))
-                            / Math.log(2))));
-        } else {
-            //backgroundNoisePower 为 dbm 时
-            mobileUser.setUpdatingUplinkRate(packagingAccuracy(edgeSettings.getBandwidth() *
-                    (Math.log(1 + (mobileUser.getTransPower() * Math.pow(distance, -edgeSettings.getEta()))
-                            / (Math.pow(10, edgeSettings.getBackgroundNoisePower() / 10.0) / 1000 + sumW))
-                            / Math.log(2))));
-        }
-
-    }
-
-    /**
-     * @param execTime 执行时间
-     * @return 计算离基站多远
-     */
-    private double calculateDistance(double execTime) {
-        List<Map<String, Object>> mobileConf = mobileUser.getMobileConf();
-        double timeNum = 0.0d;
-        int i = 0;
-        //找到 execTime 所在哪个区间 这样就能算出 这时其他移动用户离基站距离 以及 功率
-        for (; i < mobileConf.size(); i++) {
-            double time = Double.parseDouble(mobileConf.get(i).get("time").toString());
-            if (time + timeNum < execTime) {
-                timeNum += time;
-            } else {
-                break;
-            }
-        }
-        Map<String, Object> mobileMap;
-        if (i == 5) {
-            mobileMap = mobileConf.get(i - 1);
-        } else {
-            mobileMap = mobileConf.get(i);
-        }
-        int sign = 1;
-        if ((i & 1) != 0) {
-            sign = -1;
-        }
-        double time = execTime - timeNum;
-        double startingPoint = Double.parseDouble(mobileMap.get("startingPoint").toString());
-        double speed = Double.parseDouble(mobileMap.get("speed").toString());
-        return packagingAccuracy(startingPoint + sign * speed * time);
+    private double f(double x) {
+        return packagingAccuracy(-Math.pow(x - 1, 2) + 2);
     }
 
     private void updateProducerPoint() {
@@ -293,22 +169,21 @@ public class One_SSASA {
         double temp;
         for (int i = 0; i < sdPoints.size(); i++) {
             sparrowIndex = sdPoints.get(i);
-            f = fTime(sparrowIndex);
+            f = f(sparrowIndex);
             temp = sparrowIndex;
             if (f > fg) {
                 do {
                     sparrowIndex = globalMax + randomNormalDistribution() * Math.abs(globalMax - temp);
                 } while (sparrowIndex < 0 || sparrowIndex > 1);
-            } else if (Math.abs(f - fg) <= 1e-4) {
-                double abs = packagingAccuracy(Math.abs(temp - globalMin));
-                double v = packagingAccuracy(fw - f + 1e-4);
-                double v1 = packagingAccuracy(abs / v);
+            } else if (Math.abs(f - fg) <= 1e-10) {
+                double abs = Math.abs(temp - globalMin);
+                double v = fw - f + 1e-18;
+                double v1 = abs / v;
                 while (Math.abs(v1) > 1) {
                     v1 /= 10;
                 }
                 do {
                     sparrowIndex = temp + (Math.random() * 2 - 1) * v1;
-//                    System.out.println("死循环");
                 } while (sparrowIndex < 0 || sparrowIndex > 1);
             }
             sdPoints.set(i, packagingAccuracy(sparrowIndex));
@@ -325,13 +200,13 @@ public class One_SSASA {
         pdPointsTemp.sort(new Comparator<Double>() {
             @Override
             public int compare(Double o1, Double o2) {
-                return Double.compare(fTime(o1), fTime(o2));
+                return f(o2) - f(o1) > 0 ? 1 : -1;
             }
         });
         scPointsTemp.sort(new Comparator<Double>() {
             @Override
             public int compare(Double o1, Double o2) {
-                return Double.compare(fTime(o1), fTime(o2));
+                return f(o2) - f(o1) > 0 ? 1 : -1;
             }
         });
 
@@ -340,15 +215,15 @@ public class One_SSASA {
         Double scMax = scPointsTemp.get(0);
         Double scmin = scPointsTemp.get(speciesNum - PD - 1);
 
-        double fpdMax = fTime(pdMax);
-        double fpdmin = fTime(pdmin);
-        double fscMax = fTime(scMax);
-        double fscmin = fTime(scmin);
+        double fpdMax = f(pdMax);
+        double fpdmin = f(pdmin);
+        double fscMax = f(scMax);
+        double fscmin = f(scmin);
         //生产者最优的点
         updateMap.put("pdMax", packagingAccuracy(pdMax));
         Double historicalBest = updateMap.getOrDefault("historicalBest", -1d);
-        updateMap.put("historicalBest", fTime(pdMax) < fTime(historicalBest) ? packagingAccuracy(pdMax) : packagingAccuracy(historicalBest));
-        if (fpdMax < fscMax) {
+        updateMap.put("historicalBest", f(pdMax) > f(historicalBest) ? packagingAccuracy(pdMax) : packagingAccuracy(historicalBest));
+        if (fpdMax > fscMax) {
             //全局最优点
             updateMap.put("globalMax", packagingAccuracy(pdMax));
             //最优的适度度
@@ -357,7 +232,7 @@ public class One_SSASA {
             updateMap.put("globalMax", packagingAccuracy(scMax));
             updateMap.put("fg", packagingAccuracy(fscMax));
         }
-        if (fpdmin < fscmin) {
+        if (fpdmin > fscmin) {
             //全局最差点
             updateMap.put("globalMin", packagingAccuracy(scmin));
             //最差的适度度
@@ -373,51 +248,37 @@ public class One_SSASA {
         pdPointsTemp.sort(new Comparator<Double>() {
             @Override
             public int compare(Double o1, Double o2) {
-                return fTime(o1) - fTime(o2) > 0 ? 1 : -1;
+                return f(o2) - f(o1) > 0 ? 1 : -1;
             }
         });
         double pdMax = pdPointsTemp.get(0);
         updateMap.put("pdMax", packagingAccuracy(pdMax));
         Double historicalBest = updateMap.getOrDefault("historicalBest", -1d);
-        updateMap.put("historicalBest", fTime(pdMax) < fTime(historicalBest) ? packagingAccuracy(pdMax) : packagingAccuracy(historicalBest));
+        updateMap.put("historicalBest", f(pdMax) > f(historicalBest) ? packagingAccuracy(pdMax) : packagingAccuracy(historicalBest));
     }
 
-    public double calculate() {
-        List<Double> PDTemp;
-        double df;
+    private void calculate() {
         for (int i = 1; i <= iterations; i++) {
-            PDTemp = new ArrayList<>(pdPoints);
             r2 = Math.random();
             //更新发现者坐标
             updateProducerPoint();
-//            System.out.println("更新发现者坐标");
-            //模拟退火
-            for (int k = 0; k < pdPoints.size(); k++) {
-                df = fTime(pdPoints.get(k)) - fTime(PDTemp.get(k));
-                if (df > 0) {
-                    if (Math.exp((-df) / t0) < Math.random()) {
-                        pdPoints.set(k, PDTemp.get(k));
-                    }
-                }
-            }
-            //更新最优坐标1
+            //更新updateMap中最优的发现者坐标
             rankAndFindLocation();
-//            System.out.println("更新最优坐标1");
             //更新追随者坐标
             updateScroungerPoint();
-//            System.out.println("更新追随者坐标");
-            //更新最优坐标2
-            rankAndFindLocation();
-//            System.out.println("更新最优坐标2");
             //更新预警者坐标
             updateSDPoint();
-//            System.out.println("更新预警者坐标");
-            //更新最优坐标3
+
             rankAndFindLocation();
-//            System.out.println("更新最优坐标3");
-            t0 *= q;
         }
-        return updateMap.get("fg");
+        System.out.println(updateMap.get("globalMax"));
+    }
+
+    public static void main(String[] args) {
+        for (int i = 0; i < 10; i++) {
+            Two_SSA_Unimodal ssats = new Two_SSA_Unimodal(100, 1000, 0.2, 0.1, 0.8);
+            ssats.calculate();
+        }
     }
 
     private double packagingAccuracy(double x) {
