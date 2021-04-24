@@ -194,7 +194,7 @@ public class SSA {
                 do {
                     sparrowIndex = BigDecimal.valueOf(globalMax + BigDecimal.valueOf(randomNormalDistribution() * BigDecimal.valueOf(Math.abs(temp - globalMax)).doubleValue()).doubleValue()).setScale(2, BigDecimal.ROUND_HALF_UP).doubleValue();
                 } while (sparrowIndex <= 0 || sparrowIndex >= 1);
-            } else if (BigDecimal.valueOf(Math.abs(f - fg)).doubleValue() < 1e-10) {
+            } else if (BigDecimal.valueOf(Math.abs(f - fg)).doubleValue() < 1e-2) {
                 double abs = Math.abs(temp - globalMin);
                 double v = fw - f + 1e-18;
                 double v1 = abs / v;

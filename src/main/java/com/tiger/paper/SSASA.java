@@ -209,7 +209,7 @@ public class SSASA {
                     sparrowIndex = BigDecimal.valueOf(globalMax.doubleValue() + BigDecimal.valueOf(randomNormalDistribution() * BigDecimal.valueOf(Math.abs(temp - globalMax.doubleValue())).doubleValue()).doubleValue()).setScale(2, BigDecimal.ROUND_HALF_UP).doubleValue();
                 } while (sparrowIndex <= 0 || sparrowIndex >= 1);
 
-            } else if (BigDecimal.valueOf(Math.abs(f - fg.doubleValue())).doubleValue() < 1e-10) {
+            } else if (BigDecimal.valueOf(Math.abs(f - fg.doubleValue())).doubleValue() < 1e-2) {
                 double abs = Math.abs(temp - globalMin.doubleValue());
                 double v = fw.doubleValue() - f + 1e-4;
                 double v1 = abs / v;

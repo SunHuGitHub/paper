@@ -3,6 +3,7 @@ package com.tiger.paper;
 import com.alibaba.fastjson.JSONObject;
 import com.google.common.cache.Cache;
 import com.google.common.cache.CacheBuilder;
+import com.tiger.paper.one.One_SSA;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.redis.core.RedisTemplate;
 
@@ -38,7 +39,7 @@ public class MECRunner {
      * 格式化小数点
      */
     private static DecimalFormat df;
-    private static SSA ssa;
+    private static One_SSA ssa;
     private static SA sa;
     private static SSASA ssasa;
     private static List<Integer> taskCollec = new ArrayList<>(TASKNUM);
@@ -125,57 +126,57 @@ public class MECRunner {
 //        }
         for (int b = 0; b < 8; b++) {
             for (int j = 0; j < 8; j++) {
-//            ExecutorService ssaThreadPool = Executors.newFixedThreadPool(3);
-//            CountDownLatch ssaCountDown = new CountDownLatch(TASKNUM);
+                ExecutorService ssaThreadPool = Executors.newFixedThreadPool(4);
+                CountDownLatch ssaCountDown = new CountDownLatch(TASKNUM);
 //                ExecutorService saThreadPool = Executors.newFixedThreadPool(4);
 //                CountDownLatch saCountdown = new CountDownLatch(TASKNUM);
-                ExecutorService ssasaThreadPool = Executors.newFixedThreadPool(8);
-                CountDownLatch ssasaCountdown = new CountDownLatch(TASKNUM);
+//                ExecutorService ssasaThreadPool = Executors.newFixedThreadPool(5);
+//                CountDownLatch ssasaCountdown = new CountDownLatch(TASKNUM);
                 for (int i = 0; i < TASKNUM; i++) {
                     int finalI = i;
-//                ssaThreadPool.execute(() -> {
-//                    ssa = new SSA(100, 100, 0.2f, 0.1f, 0.8f, JSONObject.parseObject(JSONObject.toJSONString(mobileUser), MobileUser.class), mobileUsers, edgeSettings, taskCollec.get(finalI));
-//                    ssaRes.add(ssa.calculate());
-//                    ssaCountDown.countDown();
-//                });
+                    ssaThreadPool.execute(() -> {
+                        ssa = new One_SSA(100, 100, 0.2d, 0.1d, 0.8d, JSONObject.parseObject(JSONObject.toJSONString(mobileUser), MobileUser.class), mobileUsers, edgeSettings, taskCollec.get(finalI));
+                        ssaRes.add(ssa.calculate());
+                        ssaCountDown.countDown();
+                    });
 //
 //                    saThreadPool.execute(() -> {
 //                        sa = new SA(1000d, 1d, 0.9d, 1000, JSONObject.parseObject(JSONObject.toJSONString(mobileUser), MobileUser.class), mobileUsers, edgeSettings, taskCollec.get(finalI));
 //                        saRes.add(sa.calculate());
 //                        saCountdown.countDown();
 //                    });
-                    ssasaThreadPool.execute(() -> {
-                        ssasa = new SSASA(100, 1000, 0.2f, 0.1f, 0.8f, JSONObject.parseObject(JSONObject.toJSONString(mobileUser), MobileUser.class), mobileUsers, edgeSettings, taskCollec.get(finalI));
-                        ssasaRes.add(ssasa.calculate());
-                        ssasaCountdown.countDown();
-                    });
+//                    ssasaThreadPool.execute(() -> {
+//                        ssasa = new SSASA(10, 10, 0.2f, 0.1f, 0.8f, JSONObject.parseObject(JSONObject.toJSONString(mobileUser), MobileUser.class), mobileUsers, edgeSettings, taskCollec.get(finalI));
+//                        ssasaRes.add(ssasa.calculate());
+//                        ssasaCountdown.countDown();
+//                    });
                 }
-//            ssaCountDown.await();
-//            ssaThreadPool.shutdown();
+                ssaCountDown.await();
+                ssaThreadPool.shutdown();
 //                saCountdown.await();
 //                saThreadPool.shutdown();
-                ssasaCountdown.await();
-                ssasaThreadPool.shutdown();
+//                ssasaCountdown.await();
+//                ssasaThreadPool.shutdown();
                 double sum = 0;
-//            for (Double ssaRe : ssaRes) {
-//                sum += ssaRe;
-//            }
-//                System.out.println("ssa：" + TASKNUM + "：" + BigDecimal.valueOf(sum / TASKNUM).setScale(2, RoundingMode.HALF_UP).doubleValue());
+                for (Double ssaRe : ssaRes) {
+                    sum += ssaRe;
+                }
+                System.out.println("ssa：" + TASKNUM + "：" + BigDecimal.valueOf(sum / TASKNUM).setScale(2, RoundingMode.HALF_UP).doubleValue());
 //            sum = 0;
 //                for (Double saRe : saRes) {
 //                    sum += saRe;
 //                }
 //                System.out.println("sa：" + TASKNUM + "：" + BigDecimal.valueOf(sum / TASKNUM).setScale(2, RoundingMode.HALF_UP).doubleValue());
-                for (Double ssasaRe : ssasaRes) {
-                    sum += ssasaRe;
-                }
-                System.out.println("ssasa：" + TASKNUM + "：" + BigDecimal.valueOf(sum / TASKNUM).setScale(2, RoundingMode.HALF_UP).doubleValue());
+//                for (Double ssasaRe : ssasaRes) {
+//                    sum += ssasaRe;
+//                }
+//                System.out.println("ssasa：" + TASKNUM + "：" + BigDecimal.valueOf(sum / TASKNUM).setScale(2, RoundingMode.HALF_UP).doubleValue());
                 TASKNUM = TASKNUM + 100;
-//            ssaRes.clear();
+                ssaRes.clear();
 //                saRes.clear();
-                ssasaRes.clear();
+//                ssasaRes.clear();
             }
-            TASKNUM = 1000;
+            TASKNUM = 100;
         }
     }
 

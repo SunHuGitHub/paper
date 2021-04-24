@@ -3,10 +3,7 @@ package com.tiger.paper;
 import java.io.BufferedReader;
 import java.io.FileNotFoundException;
 import java.io.FileReader;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Random;
-import java.util.Scanner;
+import java.util.*;
 
 public class Data {
 
@@ -86,37 +83,47 @@ public class Data {
 //        for (String s1 : split) {
 //            doubles.add(Double.valueOf(s1));
 //        }
-        double f = 1.999999639718497;
-        double fg = 1.999999639718497;
-        double fw = 1.999666093410115;
-        double globalMin = 0.981726888883255;
-        double temp = 0.999399765460382;
-        double globalMax = 0.999399765460382;
-        double sparrowIndex;
-        if (f > fg) {
-            do {
-                sparrowIndex = globalMax + randomNormalDistribution() * Math.abs(globalMax - temp);
-            } while (sparrowIndex < 0 || sparrowIndex > 1);
-        } else if (Math.abs(f - fg) <= 1e-10) {
-            double abs = Math.abs(temp - globalMin);
-            double v = fw - f + 1e-18;
-//            int i = getNumberDecimalDigits(abs);
-//            int j = getNumberDecimalDigits(v);
-//            int t = Math.abs(i - j);
-//            double pow = Math.pow(10, t);
-//            if (i < j) {
-//                v *= pow;
-//            } else if (i > j) {
-//                abs *= pow;
+//        double f = 1.999999639718497;
+//        double fg = 1.999999639718497;
+//        double fw = 1.999666093410115;
+//        double globalMin = 0.981726888883255;
+//        double temp = 0.999399765460382;
+//        double globalMax = 0.999399765460382;
+//        double sparrowIndex;
+//        if (f > fg) {
+//            do {
+//                sparrowIndex = globalMax + randomNormalDistribution() * Math.abs(globalMax - temp);
+//            } while (sparrowIndex < 0 || sparrowIndex > 1);
+//        } else if (Math.abs(f - fg) <= 1e-10) {
+//            double abs = Math.abs(temp - globalMin);
+//            double v = fw - f + 1e-18;
+////            int i = getNumberDecimalDigits(abs);
+////            int j = getNumberDecimalDigits(v);
+////            int t = Math.abs(i - j);
+////            double pow = Math.pow(10, t);
+////            if (i < j) {
+////                v *= pow;
+////            } else if (i > j) {
+////                abs *= pow;
+////            }
+//            double v1 = abs / v;
+//            while (Math.abs(v1) > 1) {
+//                v1 /= 10;
 //            }
-            double v1 = abs / v;
-            while (Math.abs(v1) > 10) {
-                v1 /= 10;
-            }
-            do {
-                sparrowIndex = temp + Math.random() * v1;
-            } while (sparrowIndex < 0 || sparrowIndex > 1);
-        }
+//            do {
+//                sparrowIndex = temp + Math.random() * v1;
+//            } while (sparrowIndex < 0 || sparrowIndex > 1);
+//        }
+        List<Integer> all = new ArrayList<>();
+        all.add(2);
+        all.add(3);
+        all.add(3);
+        all.add(4);
+        ArrayList<Integer> a = new ArrayList<>();
+        a.add(2);
+        a.add(3);
+        all.removeAll(a);
+        System.out.println(all);
     }
 
     private static double randomNormalDistribution() {

@@ -157,7 +157,6 @@ public class SSATS {
             } while (sdPoints.contains(coordinatePoints.get(sdIdx)));
             sdPoints.add(coordinatePoints.get(sdIdx));
         }
-        rankAndFindLocation();
     }
 
 
@@ -208,18 +207,14 @@ public class SSATS {
     private void updateSDPoint() {
         double sparrowIndex;
         double f;
-        double fg;
-        double fw;
-        double globalMax;
-        double globalMin;
+        double fg = updateMap.get("fg");
+        double fw = updateMap.get("fw");
+        double globalMax = updateMap.get("globalMax");
+        double globalMin = updateMap.get("globalMin");
         double temp;
         for (int i = 0; i < sdPoints.size(); i++) {
             sparrowIndex = sdPoints.get(i);
             f = f(sparrowIndex);
-            fg = updateMap.get("fg");
-            fw = updateMap.get("fw");
-            globalMax = updateMap.get("globalMax");
-            globalMin = updateMap.get("globalMin");
             temp = sparrowIndex;
             if (f > fg) {
                 do {
@@ -229,11 +224,11 @@ public class SSATS {
                 double abs = Math.abs(temp - globalMin);
                 double v = fw - f + 1e-18;
                 double v1 = abs / v;
-                while (Math.abs(v1) > 10) {
+                while (Math.abs(v1) > 1) {
                     v1 /= 10;
                 }
                 do {
-                    sparrowIndex = temp + Math.random() * (abs / v);
+                    sparrowIndex = temp + (Math.random() * 2 - 1) * v1;
                 } while (sparrowIndex < 0 || sparrowIndex > 1);
             }
             sdPoints.set(i, packagingAccuracy(sparrowIndex));
@@ -314,10 +309,10 @@ public class SSATS {
             r2 = Math.random();
             //更新发现者坐标
             updateProducerPoint();
-            //更新updateMap中最优的发现者坐标
-            updateProduceMap();
+            rankAndFindLocation();
             //更新追随者坐标
             updateScroungerPoint();
+            rankAndFindLocation();
             //更新预警者坐标
             updateSDPoint();
 
