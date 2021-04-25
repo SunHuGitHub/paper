@@ -2,6 +2,11 @@ package com.tiger.paper;
 
 import com.alibaba.fastjson.JSONObject;
 import com.sun.org.apache.bcel.internal.generic.NEW;
+import org.joda.time.DateTime;
+import org.joda.time.LocalDate;
+import org.joda.time.LocalDateTime;
+import org.joda.time.format.DateTimeFormat;
+import org.joda.time.format.DateTimeFormatter;
 
 import java.math.BigDecimal;
 import java.math.RoundingMode;
@@ -113,6 +118,7 @@ public class SA {
         return fTime(temp);
     }
 
+
 //    private double fTime(double sparrowIndex) {
 //        //拿到用户的总任务集合
 ////        List<Integer> totalComputingDatas = mobileUser.getTotalComputingDatas();
@@ -152,7 +158,7 @@ public class SA {
 //        return BigDecimal.valueOf(totalTime).setScale(2, RoundingMode.HALF_UP).doubleValue();
 //    }
 
-//    private double fEnergy(double sparrowIndex) {
+    //    private double fEnergy(double sparrowIndex) {
 //        //拿到用户的总任务集合
 ////        List<Integer> totalComputingDatas = mobileUser.getTotalComputingDatas();
 //        //用户计算 1 bit数据所需CPU周期数

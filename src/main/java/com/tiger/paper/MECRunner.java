@@ -1,7 +1,11 @@
 package com.tiger.paper;
 
 import com.alibaba.fastjson.JSONObject;
+import com.tiger.paper.one.One_SSASA_MEC;
 import com.tiger.paper.one.One_SSA_MEC;
+import org.joda.time.LocalDateTime;
+import org.joda.time.format.DateTimeFormat;
+import org.joda.time.format.DateTimeFormatter;
 
 import java.io.*;
 import java.math.BigDecimal;
@@ -35,10 +39,9 @@ public class MECRunner {
      * 格式化小数点
      */
     private static DecimalFormat df;
-    private static One_SSA_MEC ssa;
-    private static SA sa;
-    private static SSASA ssasa;
+
     private static List<Integer> taskCollec = new ArrayList<>(TASKNUM);
+    private static DateTimeFormatter fmt = DateTimeFormat.forPattern("yyyy-MM-dd HH:mm:ss");
 
     static {
         InputStreamReader isr = null;
@@ -131,18 +134,18 @@ public class MECRunner {
                 for (int i = 0; i < TASKNUM; i++) {
                     int finalI = i;
                     ssaThreadPool.execute(() -> {
-                        ssa = new One_SSA_MEC(100, 500, 0.2d, 0.1d, 0.8d, JSONObject.parseObject(JSONObject.toJSONString(mobileUser), MobileUser.class), mobileUsers, edgeSettings, taskCollec.get(finalI));
+                        One_SSA_MEC ssa = new One_SSA_MEC(100, 500, 0.2d, 0.1d, 0.8d, JSONObject.parseObject(JSONObject.toJSONString(mobileUser), MobileUser.class), mobileUsers, edgeSettings, taskCollec.get(finalI));
                         ssaRes.add(ssa.calculate());
                         ssaCountDown.countDown();
                     });
 //
 //                    saThreadPool.execute(() -> {
-//                        sa = new SA(1000d, 1d, 0.9d, 1000, JSONObject.parseObject(JSONObject.toJSONString(mobileUser), MobileUser.class), mobileUsers, edgeSettings, taskCollec.get(finalI));
+//                        SA sa = new SA(1000d, 1d, 0.9d, 1000, JSONObject.parseObject(JSONObject.toJSONString(mobileUser), MobileUser.class), mobileUsers, edgeSettings, taskCollec.get(finalI));
 //                        saRes.add(sa.calculate());
 //                        saCountdown.countDown();
 //                    });
 //                    ssasaThreadPool.execute(() -> {
-//                        ssasa = new SSASA(10, 10, 0.2f, 0.1f, 0.8f, JSONObject.parseObject(JSONObject.toJSONString(mobileUser), MobileUser.class), mobileUsers, edgeSettings, taskCollec.get(finalI));
+//                        One_SSASA_MEC ssasa = new One_SSASA_MEC(10, 10, 0.2f, 0.1f, 0.8f, JSONObject.parseObject(JSONObject.toJSONString(mobileUser), MobileUser.class), mobileUsers, edgeSettings, taskCollec.get(finalI));
 //                        ssasaRes.add(ssasa.calculate());
 //                        ssasaCountdown.countDown();
 //                    });
@@ -157,22 +160,22 @@ public class MECRunner {
                 for (Double ssaRe : ssaRes) {
                     sum += ssaRe;
                 }
-                System.out.println("ssa：" + TASKNUM + "：" + BigDecimal.valueOf(sum / TASKNUM).setScale(4, RoundingMode.HALF_UP).doubleValue());
+                System.out.println("ssa：" + TASKNUM + "：" + BigDecimal.valueOf(sum / TASKNUM).setScale(4, RoundingMode.HALF_UP).doubleValue() + " " + fmt.print(LocalDateTime.now()));
 //            sum = 0;
 //                for (Double saRe : saRes) {
 //                    sum += saRe;
 //                }
-//                System.out.println("sa：" + TASKNUM + "：" + BigDecimal.valueOf(sum / TASKNUM).setScale(2, RoundingMode.HALF_UP).doubleValue());
+//                System.out.println("sa：" + TASKNUM + "：" + BigDecimal.valueOf(sum / TASKNUM).setScale(4, RoundingMode.HALF_UP).doubleValue() + " " + fmt.print(LocalDateTime.now()));
 //                for (Double ssasaRe : ssasaRes) {
 //                    sum += ssasaRe;
 //                }
-//                System.out.println("ssasa：" + TASKNUM + "：" + BigDecimal.valueOf(sum / TASKNUM).setScale(2, RoundingMode.HALF_UP).doubleValue());
+//                System.out.println("ssasa：" + TASKNUM + "：" + BigDecimal.valueOf(sum / TASKNUM).setScale(4, RoundingMode.HALF_UP).doubleValue() + " " + fmt.print(LocalDateTime.now()));
                 TASKNUM = TASKNUM + 100;
                 ssaRes.clear();
 //                saRes.clear();
 //                ssasaRes.clear();
             }
-            TASKNUM = 500;
+            TASKNUM = 100;
         }
     }
 

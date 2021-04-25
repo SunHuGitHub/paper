@@ -148,7 +148,14 @@ public class Two_SSATS_Unimodal {
         //跟随者
         scPoints = new ArrayList<>(coordinatePoints);
         scPoints.removeAll(pdPoints);
-
+        double idx;
+        while (scPoints.size() < speciesNum - PD) {
+            do {
+                idx = packagingAccuracy(Math.random());
+            }
+            while (idx > 0.8d || idx < 0.2d);
+            scPoints.add(idx);
+        }
         //预警者
         for (int i = 0; i < SD; i++) {
             int sdIdx;
