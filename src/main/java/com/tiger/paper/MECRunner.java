@@ -1,5 +1,8 @@
 package com.tiger.paper;
 
+import com.alibaba.excel.EasyExcel;
+import com.alibaba.excel.ExcelWriter;
+import com.alibaba.excel.write.metadata.WriteSheet;
 import com.alibaba.fastjson.JSONObject;
 import com.tiger.paper.one.One_SSASA_MEC;
 import com.tiger.paper.one.One_SSA_MEC;
@@ -123,60 +126,70 @@ public class MECRunner {
 //            sa = new SA(1000d, 1d, 0.9d, 500, new ArrayList<>(mobileUsers), edgeSettings, totalComputingDatas);
 //            saRes.add(sa.calculate());
 //        }
+        ExcelWriter excelWriter = EasyExcel.write("src/main/java/com/tiger/paper/data.xlsx", DataModel.class).build();
+        WriteSheet writeSheet = EasyExcel.writerSheet("data").build();
+        List<DataModel> dataModels;
         for (int b = 0; b < 8; b++) {
             for (int j = 0; j < 8; j++) {
-                ExecutorService ssaThreadPool = Executors.newFixedThreadPool(4);
-                CountDownLatch ssaCountDown = new CountDownLatch(TASKNUM);
+//                ExecutorService ssaThreadPool = Executors.newFixedThreadPool(4);
+//                CountDownLatch ssaCountDown = new CountDownLatch(TASKNUM);
 //                ExecutorService saThreadPool = Executors.newFixedThreadPool(4);
 //                CountDownLatch saCountdown = new CountDownLatch(TASKNUM);
-//                ExecutorService ssasaThreadPool = Executors.newFixedThreadPool(5);
-//                CountDownLatch ssasaCountdown = new CountDownLatch(TASKNUM);
-                for (int i = 0; i < TASKNUM; i++) {
-                    int finalI = i;
-                    ssaThreadPool.execute(() -> {
-                        One_SSA_MEC ssa = new One_SSA_MEC(100, 500, 0.2d, 0.1d, 0.8d, JSONObject.parseObject(JSONObject.toJSONString(mobileUser), MobileUser.class), mobileUsers, edgeSettings, taskCollec.get(finalI));
-                        ssaRes.add(ssa.calculate());
-                        ssaCountDown.countDown();
-                    });
+        ExecutorService ssasaThreadPool = Executors.newFixedThreadPool(4);
+        CountDownLatch ssasaCountdown = new CountDownLatch(TASKNUM);
+        for (int i = 0; i < TASKNUM; i++) {
+            int finalI = i;
+//                    ssaThreadPool.execute(() -> {
+//                        One_SSA_MEC ssa = new One_SSA_MEC(100, 500, 0.2d, 0.1d, 0.8d, JSONObject.parseObject(JSONObject.toJSONString(mobileUser), MobileUser.class), mobileUsers, edgeSettings, taskCollec.get(finalI));
+//                        ssaRes.add(ssa.calculate());
+//                        ssaCountDown.countDown();
+//                    });
 //
 //                    saThreadPool.execute(() -> {
 //                        SA sa = new SA(1000d, 1d, 0.9d, 1000, JSONObject.parseObject(JSONObject.toJSONString(mobileUser), MobileUser.class), mobileUsers, edgeSettings, taskCollec.get(finalI));
 //                        saRes.add(sa.calculate());
 //                        saCountdown.countDown();
 //                    });
-//                    ssasaThreadPool.execute(() -> {
-//                        One_SSASA_MEC ssasa = new One_SSASA_MEC(10, 10, 0.2f, 0.1f, 0.8f, JSONObject.parseObject(JSONObject.toJSONString(mobileUser), MobileUser.class), mobileUsers, edgeSettings, taskCollec.get(finalI));
-//                        ssasaRes.add(ssasa.calculate());
-//                        ssasaCountdown.countDown();
-//                    });
-                }
-                ssaCountDown.await();
-                ssaThreadPool.shutdown();
+            ssasaThreadPool.execute(() -> {
+                One_SSASA_MEC ssasa = new One_SSASA_MEC(100, 500, 0.2f, 0.1f, 0.8f, JSONObject.parseObject(JSONObject.toJSONString(mobileUser), MobileUser.class), mobileUsers, edgeSettings, taskCollec.get(finalI));
+                ssasaRes.add(ssasa.calculate());
+                ssasaCountdown.countDown();
+            });
+        }
+//                ssaCountDown.await();
+//                ssaThreadPool.shutdown();
 //                saCountdown.await();
 //                saThreadPool.shutdown();
-//                ssasaCountdown.await();
-//                ssasaThreadPool.shutdown();
-                double sum = 0;
-                for (Double ssaRe : ssaRes) {
-                    sum += ssaRe;
-                }
-                System.out.println("ssa：" + TASKNUM + "：" + BigDecimal.valueOf(sum / TASKNUM).setScale(4, RoundingMode.HALF_UP).doubleValue() + " " + fmt.print(LocalDateTime.now()));
+        ssasaCountdown.await();
+        ssasaThreadPool.shutdown();
+        double sum = 0;
+//                for (Double ssaRe : ssaRes) {
+//                    sum += ssaRe;
+//                }
+//                double val = sum / TASKNUM;
+//                System.out.println("ssa：" + TASKNUM + "：" + BigDecimal.valueOf(val).setScale(4, RoundingMode.HALF_UP).doubleValue() + " " + fmt.print(LocalDateTime.now()));
 //            sum = 0;
 //                for (Double saRe : saRes) {
 //                    sum += saRe;
 //                }
-//                System.out.println("sa：" + TASKNUM + "：" + BigDecimal.valueOf(sum / TASKNUM).setScale(4, RoundingMode.HALF_UP).doubleValue() + " " + fmt.print(LocalDateTime.now()));
-//                for (Double ssasaRe : ssasaRes) {
-//                    sum += ssasaRe;
-//                }
-//                System.out.println("ssasa：" + TASKNUM + "：" + BigDecimal.valueOf(sum / TASKNUM).setScale(4, RoundingMode.HALF_UP).doubleValue() + " " + fmt.print(LocalDateTime.now()));
-                TASKNUM = TASKNUM + 100;
-                ssaRes.clear();
-//                saRes.clear();
-//                ssasaRes.clear();
-            }
-            TASKNUM = 100;
+//                double val = sum / TASKNUM;
+//                System.out.println("sa：" + TASKNUM + "：" + BigDecimal.valueOf(val).setScale(4, RoundingMode.HALF_UP).doubleValue() + " " + fmt.print(LocalDateTime.now()));
+        for (Double ssasaRe : ssasaRes) {
+            sum += ssasaRe;
         }
+        double val = sum / TASKNUM;
+        System.out.println("ssasa：" + TASKNUM + "：" + BigDecimal.valueOf(val).setScale(4, RoundingMode.HALF_UP).doubleValue() + " " + fmt.print(LocalDateTime.now()));
+        dataModels = new ArrayList<>();
+        dataModels.add(new DataModel(TASKNUM, val));
+        excelWriter.write(dataModels, writeSheet);
+        TASKNUM = TASKNUM + 100;
+//                ssaRes.clear();
+//                saRes.clear();
+        ssasaRes.clear();
+            }
+        TASKNUM = 100;
+        }
+        excelWriter.finish();
     }
 
     /**

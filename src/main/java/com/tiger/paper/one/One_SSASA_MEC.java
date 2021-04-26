@@ -144,39 +144,63 @@ public class One_SSASA_MEC {
             sdPoints.add(coordinatePoints.get(sdIdx));
         }
     }
-
+    /**
+     * 同时考虑时间和能耗
+     * @param sparrowIndex
+     * @return
+     */
+    private double fCost(double sparrowIndex) {
+        //用户计算 1 bit数据所需CPU周期数
+        Integer cyclesPerBit = mobileUser.getCyclesPerBit();
+        //用户本地计算能力
+        Float localComputingAbility = mobileUser.getLocalComputingAbility();
+        //    本地执行时间    卸载时间      任务上传时间      上传数据大小          本地执行能耗          上传能量
+        double localExeTime, uplinkTime, uplinkComputingData, localExeEnergy = 0.0d, uplinkEnergy = 0.0d;
+        //上传数据大小
+        uplinkComputingData = totalComputingDatas * sparrowIndex;
+        //本地执行时间
+        localExeTime = BigDecimal.valueOf(((totalComputingDatas - uplinkComputingData) * cyclesPerBit) / localComputingAbility).setScale(3, BigDecimal.ROUND_HALF_UP).doubleValue();
+        localExeEnergy = (totalComputingDatas - uplinkComputingData) * cyclesPerBit * Math.pow(mobileUser.getLocalComputingAbility(), 2) * 1e-22;
+        mobileUser.setExecTime(localExeTime);
+        reFreshUpdatingUplinkRate();
+        uplinkTime = BigDecimal.valueOf(uplinkComputingData / mobileUser.getUpdatingUplinkRate()).setScale(3, BigDecimal.ROUND_HALF_UP).doubleValue();
+        uplinkEnergy = mobileUser.getTransPower() * uplinkTime;
+        double edgeExecTime = BigDecimal.valueOf(uplinkComputingData * cyclesPerBit / edgeSettings.getMecComputingAbility()).setScale(3, BigDecimal.ROUND_HALF_UP).doubleValue();
+        double totalTime = localExeTime + uplinkTime + edgeExecTime;
+        return packagingAccuracy(mobileUser.getAlpha() * (totalTime / (totalComputingDatas * cyclesPerBit / localComputingAbility)) + mobileUser.getBeta() * ((localExeEnergy + uplinkEnergy) / (totalComputingDatas * cyclesPerBit * Math.pow(mobileUser.getLocalComputingAbility(), 2) * 1e-22)));
+    }
 
 //    private double f(double x) {
 //        return packagingAccuracy(-Math.pow(x - 1, 2) + 2);
 //    }
 
-    private double fTime(double sparrowIndex) {
-
-        //用户计算 1 bit数据所需CPU周期数
-        Integer cyclesPerBit = mobileUser.getCyclesPerBit();
-        //用户本地计算能力
-        Float localComputingAbility = mobileUser.getLocalComputingAbility();
-        //      本地执行时间      任务上传时间      上传数据大小
-        double localExeTime, uplinkTime, uplinkComputingData;
-
-        //上传数据大小
-        uplinkComputingData = totalComputingDatas * sparrowIndex;
-        //本地执行时间
-        localExeTime = BigDecimal.valueOf(((totalComputingDatas - uplinkComputingData) * cyclesPerBit) / localComputingAbility).setScale(3, BigDecimal.ROUND_HALF_UP).doubleValue();
-
-        double execTime = mobileUser.getExecTime();
-        Double updatingUplinkRate = mobileUser.getUpdatingUplinkRate();
-        mobileUser.setExecTime(localExeTime);
-        reFreshUpdatingUplinkRate();
-        uplinkTime = BigDecimal.valueOf(uplinkComputingData / mobileUser.getUpdatingUplinkRate()).setScale(3, BigDecimal.ROUND_HALF_UP).doubleValue();
-
-        double edgeExecTime = BigDecimal.valueOf(uplinkComputingData * cyclesPerBit / edgeSettings.getMecComputingAbility()).setScale(3, BigDecimal.ROUND_HALF_UP).doubleValue();
-        double totalTime = localExeTime + uplinkTime + edgeExecTime;
-        mobileUser.setExecTime(execTime);
-        mobileUser.setUpdatingUplinkRate(updatingUplinkRate);
-
-        return packagingAccuracy(totalTime);
-    }
+//    private double fTime(double sparrowIndex) {
+//
+//        //用户计算 1 bit数据所需CPU周期数
+//        Integer cyclesPerBit = mobileUser.getCyclesPerBit();
+//        //用户本地计算能力
+//        Float localComputingAbility = mobileUser.getLocalComputingAbility();
+//        //      本地执行时间      任务上传时间      上传数据大小
+//        double localExeTime, uplinkTime, uplinkComputingData;
+//
+//        //上传数据大小
+//        uplinkComputingData = totalComputingDatas * sparrowIndex;
+//        //本地执行时间
+//        localExeTime = BigDecimal.valueOf(((totalComputingDatas - uplinkComputingData) * cyclesPerBit) / localComputingAbility).setScale(3, BigDecimal.ROUND_HALF_UP).doubleValue();
+//
+//        double execTime = mobileUser.getExecTime();
+//        Double updatingUplinkRate = mobileUser.getUpdatingUplinkRate();
+//        mobileUser.setExecTime(localExeTime);
+//        reFreshUpdatingUplinkRate();
+//        uplinkTime = BigDecimal.valueOf(uplinkComputingData / mobileUser.getUpdatingUplinkRate()).setScale(3, BigDecimal.ROUND_HALF_UP).doubleValue();
+//
+//        double edgeExecTime = BigDecimal.valueOf(uplinkComputingData * cyclesPerBit / edgeSettings.getMecComputingAbility()).setScale(3, BigDecimal.ROUND_HALF_UP).doubleValue();
+//        double totalTime = localExeTime + uplinkTime + edgeExecTime;
+//        mobileUser.setExecTime(execTime);
+//        mobileUser.setUpdatingUplinkRate(updatingUplinkRate);
+//
+//        return packagingAccuracy(totalTime);
+//    }
 
 
     /**
@@ -293,7 +317,7 @@ public class One_SSASA_MEC {
         double temp;
         for (int i = 0; i < sdPoints.size(); i++) {
             sparrowIndex = sdPoints.get(i);
-            f = fTime(sparrowIndex);
+            f = fEnergy(sparrowIndex);
             temp = sparrowIndex;
             if (f > fg) {
                 do {
@@ -332,13 +356,13 @@ public class One_SSASA_MEC {
         pdPointsTemp.sort(new Comparator<Double>() {
             @Override
             public int compare(Double o1, Double o2) {
-                return Double.compare(fTime(o1), fTime(o2));
+                return Double.compare(fEnergy(o1), fEnergy(o2));
             }
         });
         scPointsTemp.sort(new Comparator<Double>() {
             @Override
             public int compare(Double o1, Double o2) {
-                return Double.compare(fTime(o1), fTime(o2));
+                return Double.compare(fEnergy(o1), fEnergy(o2));
             }
         });
 
@@ -347,14 +371,14 @@ public class One_SSASA_MEC {
         Double scMax = scPointsTemp.get(0);
         Double scmin = scPointsTemp.get(speciesNum - PD - 1);
 
-        double fpdMax = fTime(pdMax);
-        double fpdmin = fTime(pdmin);
-        double fscMax = fTime(scMax);
-        double fscmin = fTime(scmin);
+        double fpdMax = fEnergy(pdMax);
+        double fpdmin = fEnergy(pdmin);
+        double fscMax = fEnergy(scMax);
+        double fscmin = fEnergy(scmin);
         //生产者最优的点
         updateMap.put("pdMax", packagingAccuracy(pdMax));
         Double historicalBest = updateMap.getOrDefault("historicalBest", -1d);
-        updateMap.put("historicalBest", fTime(pdMax) < fTime(historicalBest) ? packagingAccuracy(pdMax) : packagingAccuracy(historicalBest));
+        updateMap.put("historicalBest", fEnergy(pdMax) < fEnergy(historicalBest) ? packagingAccuracy(pdMax) : packagingAccuracy(historicalBest));
         if (fpdMax < fscMax) {
             //全局最优点
             updateMap.put("globalMax", packagingAccuracy(pdMax));
@@ -380,13 +404,13 @@ public class One_SSASA_MEC {
         pdPointsTemp.sort(new Comparator<Double>() {
             @Override
             public int compare(Double o1, Double o2) {
-                return fTime(o1) - fTime(o2) > 0 ? 1 : -1;
+                return fEnergy(o1) - fEnergy(o2) > 0 ? 1 : -1;
             }
         });
         double pdMax = pdPointsTemp.get(0);
         updateMap.put("pdMax", packagingAccuracy(pdMax));
         Double historicalBest = updateMap.getOrDefault("historicalBest", -1d);
-        updateMap.put("historicalBest", fTime(pdMax) < fTime(historicalBest) ? packagingAccuracy(pdMax) : packagingAccuracy(historicalBest));
+        updateMap.put("historicalBest", fEnergy(pdMax) < fEnergy(historicalBest) ? packagingAccuracy(pdMax) : packagingAccuracy(historicalBest));
     }
 
     public double calculate() {
@@ -400,7 +424,7 @@ public class One_SSASA_MEC {
 //            System.out.println("更新发现者坐标");
             //模拟退火
             for (int k = 0; k < pdPoints.size(); k++) {
-                df = fTime(pdPoints.get(k)) - fTime(PDTemp.get(k));
+                df = fEnergy(pdPoints.get(k)) - fEnergy(PDTemp.get(k));
                 if (df > 0) {
                     if (Math.exp((-df) / t0) < Math.random()) {
                         pdPoints.set(k, PDTemp.get(k));
@@ -449,6 +473,7 @@ public class One_SSASA_MEC {
         //return [u*c,v*c];
         return packagingAccuracy(u * c);
     }
+
     private double fEnergy(double sparrowIndex) {
 
         //用户计算 1 bit数据所需CPU周期数
@@ -473,6 +498,6 @@ public class One_SSASA_MEC {
         uplinkEnergy = mobileUser.getTransPower() * uplinkTime;
         mobileUser.setExecTime(execTime);
         mobileUser.setUpdatingUplinkRate(updatingUplinkRate);
-        return packagingAccuracy(localExeEnergy + uplinkEnergy);
+        return packagingAccuracy(localExeEnergy + uplinkEnergy + uplinkComputingData * cyclesPerBit * Math.pow(edgeSettings.getMecComputingAbility(), 2) * 1e-22);
     }
 }
