@@ -4,6 +4,7 @@ import com.alibaba.excel.EasyExcel;
 import com.alibaba.excel.ExcelWriter;
 import com.alibaba.excel.write.metadata.WriteSheet;
 import com.alibaba.fastjson.JSONObject;
+import com.tiger.paper.one.ONE_GWO_MEC;
 import com.tiger.paper.one.One_SSASA_MEC;
 import com.tiger.paper.one.One_SSA_MEC;
 import org.joda.time.LocalDateTime;
@@ -33,7 +34,7 @@ public class MECRunner {
     /**
      * 任务数量
      */
-    private static int TASKNUM = 100;
+    private static int TASKNUM = 500;
     /**
      * 移动用户个数
      */
@@ -116,6 +117,7 @@ public class MECRunner {
         List<Double> ssaRes = Collections.synchronizedList(new ArrayList<>(TASKNUM));
         List<Double> saRes = Collections.synchronizedList(new ArrayList<>(TASKNUM));
         List<Double> ssasaRes = Collections.synchronizedList(new ArrayList<>(TASKNUM));
+        List<Double> gwoRes = Collections.synchronizedList(new ArrayList<>(TASKNUM));
 
         MobileUser mobileUser = mobileUsers.get(0);
         mobileUsers.remove(0);
@@ -135,10 +137,12 @@ public class MECRunner {
 //                CountDownLatch ssaCountDown = new CountDownLatch(TASKNUM);
 //                ExecutorService saThreadPool = Executors.newFixedThreadPool(4);
 //                CountDownLatch saCountdown = new CountDownLatch(TASKNUM);
-        ExecutorService ssasaThreadPool = Executors.newFixedThreadPool(4);
-        CountDownLatch ssasaCountdown = new CountDownLatch(TASKNUM);
-        for (int i = 0; i < TASKNUM; i++) {
-            int finalI = i;
+//                ExecutorService ssasaThreadPool = Executors.newFixedThreadPool(4);
+//                CountDownLatch ssasaCountdown = new CountDownLatch(TASKNUM);
+                ExecutorService gwoThreadPool = Executors.newFixedThreadPool(4);
+                CountDownLatch gwoCountdown = new CountDownLatch(TASKNUM);
+                for (int i = 0; i < TASKNUM; i++) {
+                    int finalI = i;
 //                    ssaThreadPool.execute(() -> {
 //                        One_SSA_MEC ssa = new One_SSA_MEC(100, 500, 0.2d, 0.1d, 0.8d, JSONObject.parseObject(JSONObject.toJSONString(mobileUser), MobileUser.class), mobileUsers, edgeSettings, taskCollec.get(finalI));
 //                        ssaRes.add(ssa.calculate());
@@ -150,19 +154,26 @@ public class MECRunner {
 //                        saRes.add(sa.calculate());
 //                        saCountdown.countDown();
 //                    });
-            ssasaThreadPool.execute(() -> {
-                One_SSASA_MEC ssasa = new One_SSASA_MEC(100, 500, 0.2f, 0.1f, 0.8f, JSONObject.parseObject(JSONObject.toJSONString(mobileUser), MobileUser.class), mobileUsers, edgeSettings, taskCollec.get(finalI));
-                ssasaRes.add(ssasa.calculate());
-                ssasaCountdown.countDown();
-            });
-        }
+//                    ssasaThreadPool.execute(() -> {
+//                        One_SSASA_MEC ssasa = new One_SSASA_MEC(100, 500, 0.2f, 0.1f, 0.8f, JSONObject.parseObject(JSONObject.toJSONString(mobileUser), MobileUser.class), mobileUsers, edgeSettings, taskCollec.get(finalI));
+//                        ssasaRes.add(ssasa.calculate());
+//                        ssasaCountdown.countDown();
+//                    });
+                    gwoThreadPool.execute(() -> {
+                        ONE_GWO_MEC gwo = new ONE_GWO_MEC(100, 1000, JSONObject.parseObject(JSONObject.toJSONString(mobileUser), MobileUser.class), mobileUsers, edgeSettings, taskCollec.get(finalI));
+                        gwoRes.add(gwo.calculate());
+                        gwoCountdown.countDown();
+                    });
+                }
 //                ssaCountDown.await();
 //                ssaThreadPool.shutdown();
 //                saCountdown.await();
 //                saThreadPool.shutdown();
-        ssasaCountdown.await();
-        ssasaThreadPool.shutdown();
-        double sum = 0;
+//                ssasaCountdown.await();
+//                ssasaThreadPool.shutdown();
+                gwoCountdown.await();
+                gwoThreadPool.shutdown();
+                double sum = 0;
 //                for (Double ssaRe : ssaRes) {
 //                    sum += ssaRe;
 //                }
@@ -174,20 +185,27 @@ public class MECRunner {
 //                }
 //                double val = sum / TASKNUM;
 //                System.out.println("sa：" + TASKNUM + "：" + BigDecimal.valueOf(val).setScale(4, RoundingMode.HALF_UP).doubleValue() + " " + fmt.print(LocalDateTime.now()));
-        for (Double ssasaRe : ssasaRes) {
-            sum += ssasaRe;
-        }
-        double val = sum / TASKNUM;
-        System.out.println("ssasa：" + TASKNUM + "：" + BigDecimal.valueOf(val).setScale(4, RoundingMode.HALF_UP).doubleValue() + " " + fmt.print(LocalDateTime.now()));
-        dataModels = new ArrayList<>();
-        dataModels.add(new DataModel(TASKNUM, val));
-        excelWriter.write(dataModels, writeSheet);
-        TASKNUM = TASKNUM + 100;
+//                for (Double ssasaRe : ssasaRes) {
+//                    sum += ssasaRe;
+//                }
+//                double val = sum / TASKNUM;
+//                System.out.println("ssasa：" + TASKNUM + "：" + BigDecimal.valueOf(val).setScale(4, RoundingMode.HALF_UP).doubleValue() + " " + fmt.print(LocalDateTime.now()));
+                sum = 0;
+                for (Double gwoRe : gwoRes) {
+                    sum += gwoRe;
+                }
+                double val = sum / TASKNUM;
+                System.out.println("gwo：" + TASKNUM + "：" + BigDecimal.valueOf(val).setScale(4, RoundingMode.HALF_UP).doubleValue() + " " + fmt.print(LocalDateTime.now()));
+                dataModels = new ArrayList<>();
+                dataModels.add(new DataModel(TASKNUM, val));
+                excelWriter.write(dataModels, writeSheet);
+                TASKNUM = TASKNUM + 500;
 //                ssaRes.clear();
 //                saRes.clear();
-        ssasaRes.clear();
+//                ssasaRes.clear();
+                gwoRes.clear();
             }
-        TASKNUM = 100;
+            TASKNUM = 500;
         }
         excelWriter.finish();
     }

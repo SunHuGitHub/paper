@@ -79,7 +79,7 @@ public class Two_SSATS_Unimodal {
      */
     private Map<String, Double> updateMap;
     /**
-     * 禁忌表长度
+     * 领域搜索长度
      */
     private int searchFields;
     /**

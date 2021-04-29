@@ -18,8 +18,8 @@ public class Two_SSA_Multimodal {
      * 维度
      */
     private static final int DIMENSION = 30;
-    private static final int UPPER_BOUND = 100;
-    private static final int LOWER_BOUND = -100;
+    private static final int UPPER_BOUND = 1;
+    private static final int LOWER_BOUND = -1;
     /**
      * 种群大小
      */
@@ -100,13 +100,14 @@ public class Two_SSA_Multimodal {
             coordinatePoints.add(temp);
         }
         //--------------------------------------------------------下面进行分离生产者、跟随者、预警者的位置，方便后续对它们更新
-        for (int i = 0; i < PD; i++) {
-            int pdIdx;
-            do {
-                pdIdx = random.nextInt(speciesNum);
-            } while (pdPoints.contains(coordinatePoints.get(pdIdx)));
-            pdPoints.add(coordinatePoints.get(pdIdx));
-        }
+        List<List<Double>> lists = new ArrayList<>(coordinatePoints);
+        lists.sort(new Comparator<List<Double>>() {
+            @Override
+            public int compare(List<Double> o1, List<Double> o2) {
+                return Double.compare(fSphere(o1), fSphere(o2));
+            }
+        });
+        pdPoints = lists.subList(0, PD);
         //跟随者
         scPoints = new ArrayList<>(coordinatePoints);
         scPoints.removeAll(pdPoints);
@@ -304,19 +305,21 @@ public class Two_SSA_Multimodal {
     }
 
     public static void main(String[] args) {
-        double res[] = new double[30];
-        double sum = 0.0d;
-        for (int i = 0; i < 30; i++) {
-            res[i] = new Two_SSA_Multimodal(100, 1000, 0.8d, 0.1d, 0.8d).calculate();
-            sum += res[i];
+        for (int z = 0; z < 7; z++) {
+            double res[] = new double[30];
+            double sum = 0.0d;
+            for (int i = 0; i < 30; i++) {
+                res[i] = new Two_SSA_Multimodal(100, 1000, 0.8d, 0.1d, 0.8d).calculate();
+                sum += res[i];
+            }
+            double mean = sum / res.length;
+            System.out.println(BigDecimal.valueOf(mean).setScale(PRECISION, RoundingMode.HALF_UP).doubleValue());
+            sum = 0.0d;
+            for (int i = 0; i < res.length; i++) {
+                sum += Math.pow(res[i] - mean, 2);
+            }
+            System.out.println(BigDecimal.valueOf(Math.sqrt(sum / res.length)).setScale(PRECISION, RoundingMode.HALF_UP).doubleValue());
         }
-        double mean = sum / res.length;
-        System.out.println(BigDecimal.valueOf(mean).setScale(PRECISION, RoundingMode.HALF_UP).doubleValue());
-        sum = 0.0d;
-        for (int i = 0; i < res.length; i++) {
-            sum += Math.pow(res[i] - mean, 2);
-        }
-        System.out.println(BigDecimal.valueOf(Math.sqrt(sum / res.length)).setScale(PRECISION, RoundingMode.HALF_UP).doubleValue());
     }
 
     /**
