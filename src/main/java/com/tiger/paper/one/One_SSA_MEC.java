@@ -466,18 +466,24 @@ public class One_SSA_MEC {
         //用户本地计算能力
         Float localComputingAbility = mobileUser.getLocalComputingAbility();
         //    本地执行时间    卸载时间      任务上传时间      上传数据大小          本地执行能耗          上传能量
-        double localExeTime, uplinkTime, uplinkComputingData, localExeEnergy = 0.0d, uplinkEnergy = 0.0d;
+        double localExeTime, uplinkTime, uplinkComputingData, localExeEnergy, uplinkEnergy;
         //上传数据大小
         uplinkComputingData = totalComputingDatas * sparrowIndex;
         //本地执行时间
-        localExeTime = BigDecimal.valueOf(((totalComputingDatas - uplinkComputingData) * cyclesPerBit) / localComputingAbility).setScale(3, BigDecimal.ROUND_HALF_UP).doubleValue();
+        localExeTime = BigDecimal.valueOf(((totalComputingDatas - uplinkComputingData) * cyclesPerBit) / localComputingAbility).setScale(PRECISION, BigDecimal.ROUND_HALF_UP).doubleValue();
         localExeEnergy = (totalComputingDatas - uplinkComputingData) * cyclesPerBit * Math.pow(mobileUser.getLocalComputingAbility(), 2) * 1e-22;
         mobileUser.setExecTime(localExeTime);
+        double execTime = mobileUser.getExecTime();
+        Double updatingUplinkRate = mobileUser.getUpdatingUplinkRate();
         reFreshUpdatingUplinkRate();
-        uplinkTime = BigDecimal.valueOf(uplinkComputingData / mobileUser.getUpdatingUplinkRate()).setScale(3, BigDecimal.ROUND_HALF_UP).doubleValue();
+        uplinkTime = BigDecimal.valueOf(uplinkComputingData / mobileUser.getUpdatingUplinkRate()).setScale(PRECISION, BigDecimal.ROUND_HALF_UP).doubleValue();
         uplinkEnergy = mobileUser.getTransPower() * uplinkTime;
-        double edgeExecTime = BigDecimal.valueOf(uplinkComputingData * cyclesPerBit / edgeSettings.getMecComputingAbility()).setScale(3, BigDecimal.ROUND_HALF_UP).doubleValue();
-        double totalTime = localExeTime + uplinkTime + edgeExecTime;
-        return packagingAccuracy(mobileUser.getAlpha() * (totalTime / (totalComputingDatas * cyclesPerBit / localComputingAbility)) + mobileUser.getBeta() * ((localExeEnergy + uplinkEnergy) / (totalComputingDatas * cyclesPerBit * Math.pow(mobileUser.getLocalComputingAbility(), 2) * 1e-22)));
+        double totalTime = localExeTime + uplinkTime;
+        mobileUser.setExecTime(execTime);
+        mobileUser.setUpdatingUplinkRate(updatingUplinkRate);
+
+        double p1 = mobileUser.getAlpha() * (totalTime / (totalComputingDatas * cyclesPerBit / localComputingAbility));
+        double p2 = mobileUser.getBeta() * ((localExeEnergy + uplinkEnergy) / (totalComputingDatas * cyclesPerBit * Math.pow(mobileUser.getLocalComputingAbility(), 2) * 1e-22));
+        return packagingAccuracy(p1 + p2);
     }
 }
