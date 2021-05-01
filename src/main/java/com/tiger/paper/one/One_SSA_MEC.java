@@ -18,6 +18,10 @@ public class One_SSA_MEC {
      */
     private static final int PRECISION = 4;
     /**
+     * cent/gigahertz   分/千兆赫 -> 6/1G
+     */
+    private static final int COST = 6;
+    /**
      * 种群大小
      */
     private int speciesNum;
@@ -402,6 +406,34 @@ public class One_SSA_MEC {
 //            System.out.println("更新最优坐标3");
         }
         return updateMap.get("fg");
+    }
+
+    public Map<String, Double> calculateMap() {
+        for (int i = 1; i <= iterations; i++) {
+            r2 = Math.random();
+            //更新发现者坐标
+            updateProducerPoint();
+//            System.out.println("更新发现者坐标");
+            //更新最优坐标1
+            rankAndFindLocation();
+//            System.out.println("更新最优坐标1");
+            //更新追随者坐标
+            updateScroungerPoint();
+//            System.out.println("更新追随者坐标");
+            //更新最优坐标2
+            rankAndFindLocation();
+//            System.out.println("更新最优坐标2");
+            //更新预警者坐标
+            updateSDPoint();
+//            System.out.println("更新预警者坐标");
+            //更新最优坐标3
+            rankAndFindLocation();
+//            System.out.println("更新最优坐标3");
+        }
+        Map<String, Double> res = new HashMap<>();
+        res.put("res", updateMap.get("fg"));
+        res.put("cost", packagingAccuracy(((updateMap.get("globalMax") * totalComputingDatas * mobileUser.getCyclesPerBit()) / edgeSettings.getMecComputingAbility()) * (edgeSettings.getMecComputingAbility() / 1e9) * COST));
+        return res;
     }
 
     private double packagingAccuracy(double x) {

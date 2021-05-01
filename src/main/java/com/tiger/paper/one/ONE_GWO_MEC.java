@@ -5,10 +5,7 @@ import com.tiger.paper.MobileUser;
 
 import java.math.BigDecimal;
 import java.math.RoundingMode;
-import java.util.ArrayList;
-import java.util.Comparator;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 
 /**
  * @author Tiger
@@ -19,6 +16,10 @@ public class ONE_GWO_MEC {
      * 控制小数点后几位的精度
      */
     private static final int PRECISION = 4;
+    /**
+     * cent/gigahertz   分/千兆赫 -> 6/1G
+     */
+    private static final int COST = 6;
     /**
      * 初始种群
      */
@@ -129,6 +130,53 @@ public class ONE_GWO_MEC {
         }
         rank();
         return fEnergy(alph);
+    }
+    public Map<String,Double> calculateMap() {
+        for (int i = 0; i < iterations; i++) {
+            rank();
+            a = 2 - (i / iterations);
+            double A1;
+            double C1;
+            double A2;
+            double C2;
+            double A3;
+            double C3;
+            double X1;
+            double X2;
+            double X3;
+            for (int z = 0; z < coordinatePoints.size(); z++) {
+
+                do {
+                    rand1 = Math.random();
+                    rand2 = Math.random();
+                    A1 = 2 * a * rand1 - a;
+                    C1 = 2 * rand2;
+                    X1 = alph - A1 * Math.abs(C1 - coordinatePoints.get(z));
+                } while (X1 < 0 || X1 > 1);
+
+                do {
+                    rand1 = Math.random();
+                    rand2 = Math.random();
+                    A2 = 2 * a * rand1 - a;
+                    C2 = 2 * rand2;
+                    X2 = beta - A2 * Math.abs(C2 - coordinatePoints.get(z));
+                } while (X2 < 0 || X2 > 1);
+
+                do {
+                    rand1 = Math.random();
+                    rand2 = Math.random();
+                    A3 = 2 * a * rand1 - a;
+                    C3 = 2 * rand2;
+                    X3 = seta - A3 * Math.abs(C3 - coordinatePoints.get(z));
+                } while (X3 < 0 || X3 > 1);
+                coordinatePoints.set(z, (X1 + X2 + X3) / 3);
+            }
+        }
+        rank();
+        Map<String, Double> res = new HashMap<>();
+        res.put("res", fEnergy(alph));
+        res.put("cost", packagingAccuracy(((alph * totalComputingDatas * mobileUser.getCyclesPerBit()) / edgeSettings.getMecComputingAbility()) * (edgeSettings.getMecComputingAbility() / 1e9) * COST));
+        return res;
     }
 
     /**
