@@ -148,7 +148,7 @@ public class MECRunner {
 //                        One_SSA_MEC ssa = new One_SSA_MEC(100, 500, 0.2d, 0.1d, 0.8d, JSONObject.parseObject(JSONObject.toJSONString(mobileUser), MobileUser.class), mobileUsers, edgeSettings, taskCollec.get(finalI));
 //                        ssaRes.add(ssa.calculate());
 //                    Map<String, Double> res = ssa.calculateMap();
-//                    ssaRes.add(res.get("value"));
+//                    ssaRes.add(res.get("res"));
 //                    costList.add(res.get("cost"));
 //                        ssaCountDown.countDown();
 //                    });
@@ -157,15 +157,15 @@ public class MECRunner {
 //                        SA sa = new SA(1000d, 1d, 0.9d, 1000, JSONObject.parseObject(JSONObject.toJSONString(mobileUser), MobileUser.class), mobileUsers, edgeSettings, taskCollec.get(finalI));
 //                        saRes.add(sa.calculate());
                     //    Map<String, Double> res = sa.calculateMap();
-//                    saRes.add(res.get("value"));
+//                    saRes.add(res.get("res"));
 //                    costList.add(res.get("cost"));
 //                        saCountdown.countDown();
 //                    });
                     ssasaThreadPool.execute(() -> {
-                        One_SSASA_MEC ssasa = new One_SSASA_MEC(100, 500, 0.2f, 0.1f, 0.8f, JSONObject.parseObject(JSONObject.toJSONString(mobileUser), MobileUser.class), mobileUsers, edgeSettings, taskCollec.get(finalI));
+                        One_SSASA_MEC ssasa = new One_SSASA_MEC(100, 100, 0.2f, 0.1f, 0.8f, JSONObject.parseObject(JSONObject.toJSONString(mobileUser), MobileUser.class), mobileUsers, edgeSettings, taskCollec.get(finalI));
 //                        ssasaRes.add(ssasa.calculate());
                         Map<String, Double> res = ssasa.calculateMap();
-                        ssasaRes.add(res.get("value"));
+                        ssasaRes.add(res.get("res"));
                         costList.add(res.get("cost"));
                         ssasaCountdown.countDown();
                     });
@@ -173,7 +173,7 @@ public class MECRunner {
 //                        ONE_GWO_MEC gwo = new ONE_GWO_MEC(100, 1000, JSONObject.parseObject(JSONObject.toJSONString(mobileUser), MobileUser.class), mobileUsers, edgeSettings, taskCollec.get(finalI));
 //                        gwoRes.add(gwo.calculate());
 //                    Map<String, Double> res = gwo.calculateMap();
-//                    gwoRes.add(res.get("value"));
+//                    gwoRes.add(res.get("res"));
 //                    costList.add(res.get("cost"));
 //                        gwoCountdown.countDown();
 //                    });
