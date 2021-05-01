@@ -67,11 +67,11 @@ public class SA {
 
 
     public double calculate() {
-        return run(t0, tEnd, q, l, BigDecimal.valueOf(Math.random()).setScale(2, RoundingMode.HALF_UP).doubleValue());
+        return run(t0, tEnd, q, l, BigDecimal.valueOf(Math.random()).setScale(PRECISION, RoundingMode.HALF_UP).doubleValue());
     }
 
     public Map<String, Double> calculateMap() {
-        return runMap(t0, tEnd, q, l, BigDecimal.valueOf(Math.random()).setScale(2, RoundingMode.HALF_UP).doubleValue());
+        return runMap(t0, tEnd, q, l, BigDecimal.valueOf(Math.random()).setScale(PRECISION, RoundingMode.HALF_UP).doubleValue());
     }
 
     /**
@@ -195,7 +195,7 @@ public class SA {
 ////        } else {
 ////        }
 ////        offloadTime = uplinkTime + BigDecimal.valueOf(uplinkComputingData * cyclesPerBit / edgeSettings.getMecComputingAbility()).doubleValue();
-////        trueTime = BigDecimal.valueOf(trueTime + Math.max(localExeTime, offloadTime)).setScale(2, BigDecimal.ROUND_HALF_UP).doubleValue();
+////        trueTime = BigDecimal.valueOf(trueTime + Math.max(localExeTime, offloadTime)).setScale(PRECISION, BigDecimal.ROUND_HALF_UP).doubleValue();
 //        double execTime = mobileUser.getExecTime();
 //        Double updatingUplinkRate = mobileUser.getUpdatingUplinkRate();
 //        mobileUser.setExecTime(localExeTime);
@@ -234,7 +234,7 @@ public class SA {
 ////        } else {
 ////        }
 ////        offloadTime = uplinkTime + BigDecimal.valueOf(uplinkComputingData * cyclesPerBit / edgeSettings.getMecComputingAbility()).doubleValue();
-////        trueTime = BigDecimal.valueOf(trueTime + Math.max(localExeTime, offloadTime)).setScale(2, BigDecimal.ROUND_HALF_UP).doubleValue();
+////        trueTime = BigDecimal.valueOf(trueTime + Math.max(localExeTime, offloadTime)).setScale(PRECISION, BigDecimal.ROUND_HALF_UP).doubleValue();
 //        double execTime = mobileUser.getExecTime();
 //        Double updatingUplinkRate = mobileUser.getUpdatingUplinkRate();
 //        mobileUser.setExecTime(localExeTime);
@@ -248,7 +248,7 @@ public class SA {
 //        mobileUser.setExecTime(execTime);
 //        mobileUser.setUpdatingUplinkRate(updatingUplinkRate);
 ////        }
-//        return BigDecimal.valueOf(totalTime).setScale(2, RoundingMode.HALF_UP).doubleValue();
+//        return BigDecimal.valueOf(totalTime).setScale(PRECISION, RoundingMode.HALF_UP).doubleValue();
 //    }
 
     /**

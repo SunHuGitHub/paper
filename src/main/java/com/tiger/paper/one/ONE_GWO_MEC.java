@@ -174,7 +174,7 @@ public class ONE_GWO_MEC {
         }
         rank();
         Map<String, Double> res = new HashMap<>();
-        res.put("res", fEnergy(alph));
+        res.put("res", fCost(alph));
         res.put("cost", packagingAccuracy(((alph * totalComputingDatas * mobileUser.getCyclesPerBit()) / edgeSettings.getMecComputingAbility()) * (edgeSettings.getMecComputingAbility() / 1e9) * COST));
         return res;
     }
