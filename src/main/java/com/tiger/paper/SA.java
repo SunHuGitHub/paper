@@ -43,7 +43,7 @@ public class SA {
     private MobileUser mobileUser;
     private MobileUser mobileUserTemp;
 
-    public SA(double t0, double tEnd, double q, long l, MobileUser mobileUser, List<MobileUser> mobileUsers, EdgeSettings edgeSettings, Integer totalComputingDatas) {
+    public SA(double t0, double tEnd, double q, long l, MobileUser mobileUser, List<MobileUser> mobileUsers, EdgeSettings edgeSettings, Long totalComputingDatas) {
         this.t0 = t0;
         this.tEnd = tEnd;
         this.q = q;
@@ -58,7 +58,7 @@ public class SA {
     /**
      * 任务集合，每个任务单位为（bits）
      */
-    private Integer totalComputingDatas;
+    private Long totalComputingDatas;
 
 
     public double calculate() {

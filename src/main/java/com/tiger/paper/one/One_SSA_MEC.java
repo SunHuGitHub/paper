@@ -74,7 +74,7 @@ public class One_SSA_MEC {
     /**
      * 任务，每个任务单位为（bits）
      */
-    private Integer totalComputingDatas;
+    private Long totalComputingDatas;
 
     private List<MobileUser> mobileUsers;
 
@@ -82,7 +82,7 @@ public class One_SSA_MEC {
 
     private EdgeSettings edgeSettings;
 
-    public One_SSA_MEC(int speciesNum, int iterations, double PDRatio, double SDRatio, double ST, MobileUser mobileUser, List<MobileUser> mobileUsers, EdgeSettings edgeSettings, Integer totalComputingDatas) {
+    public One_SSA_MEC(int speciesNum, int iterations, double PDRatio, double SDRatio, double ST, MobileUser mobileUser, List<MobileUser> mobileUsers, EdgeSettings edgeSettings, Long totalComputingDatas) {
         this.speciesNum = speciesNum;
         this.iterations = iterations;
         this.PD = (int) (speciesNum * PDRatio);
