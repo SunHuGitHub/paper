@@ -44,7 +44,7 @@ public class MECRunner {
      */
     private static DecimalFormat df;
 
-    private static List<Integer> taskCollec = new ArrayList<>(TASKNUM);
+    private static List<Long> taskCollec = new ArrayList<>(TASKNUM);
     private static DateTimeFormatter fmt = DateTimeFormat.forPattern("yyyy-MM-dd HH:mm:ss");
 
     static {
@@ -55,7 +55,7 @@ public class MECRunner {
             BufferedReader bufferedReader = new BufferedReader(isr);
             String s;
             while ((s = bufferedReader.readLine()) != null) {
-                taskCollec.add(Integer.parseInt(s) * 8192);
+                taskCollec.add(Long.parseLong(s) * 8192);
             }
         } catch (UnsupportedEncodingException e) {
             e.printStackTrace();
@@ -69,7 +69,7 @@ public class MECRunner {
     public static void main(String[] args) throws InterruptedException {
 
         //带宽 1MHZ  背景噪声 -100dbm MEC计算能力 5GHZ  路径衰落因子 4  边缘服务器基站范围
-        edgeSettings = new EdgeSettings(20e6f, -250f, 4e9f, 2, 500);
+        edgeSettings = new EdgeSettings(20e6f, -250f, 2e9f, 2, 500);
 //        mobileUsers = new ArrayList<>();
         df = new DecimalFormat("0.00");
         //本模型是最小化每个移动用户的costFuntion 即 min costFuntion()
@@ -77,7 +77,7 @@ public class MECRunner {
         int[] taskDataSize = {1500};
         int[] cyclesPerBit = {1200};
         //本地计算能力 0.5GHZ  0.8GHZ  1GHZ
-        float[] localComputingAbility = {1.5e9f, 1.8e9f, 2e9f};
+        float[] localComputingAbility = {1.8e9f, 1.9e9f, 2e9f};
         //传输功率 0.05w  0.08w  0.1w
         float[] transPower = {0.8f, 1f};
         //移动用户对时间的权重 最大为 10。已知时间权重，能耗权重就为 10 - X

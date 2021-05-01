@@ -43,7 +43,7 @@ public class ONE_GWO_MEC {
     /**
      * 任务，每个任务单位为（bits）
      */
-    private Integer totalComputingDatas;
+    private Long totalComputingDatas;
 
     private List<MobileUser> mobileUsers;
 
@@ -51,7 +51,7 @@ public class ONE_GWO_MEC {
 
     private EdgeSettings edgeSettings;
 
-    public ONE_GWO_MEC(int speciesNum, int iterations, MobileUser mobileUser, List<MobileUser> mobileUsers, EdgeSettings edgeSettings, Integer totalComputingDatas) {
+    public ONE_GWO_MEC(int speciesNum, int iterations, MobileUser mobileUser, List<MobileUser> mobileUsers, EdgeSettings edgeSettings, Long totalComputingDatas) {
         this.speciesNum = speciesNum;
         this.iterations = iterations;
         this.coordinatePoints = new ArrayList<>(speciesNum);
@@ -74,7 +74,7 @@ public class ONE_GWO_MEC {
         temp.sort(new Comparator<Double>() {
             @Override
             public int compare(Double o1, Double o2) {
-                return Double.compare(fTime(o1), fTime(o2));
+                return Double.compare(fEnergy(o1), fEnergy(o2));
             }
         });
         this.alph = temp.get(0);
@@ -128,7 +128,7 @@ public class ONE_GWO_MEC {
             }
         }
         rank();
-        return fTime(alph);
+        return fEnergy(alph);
     }
 
     /**
@@ -244,33 +244,33 @@ public class ONE_GWO_MEC {
         return packagingAccuracy(localExeEnergy + uplinkEnergy + uplinkComputingData * cyclesPerBit * Math.pow(edgeSettings.getMecComputingAbility(), 2) * 1e-22);
     }
 
-    private double fTime(double sparrowIndex) {
-
-        //用户计算 1 bit数据所需CPU周期数
-        Integer cyclesPerBit = mobileUser.getCyclesPerBit();
-        //用户本地计算能力
-        Float localComputingAbility = mobileUser.getLocalComputingAbility();
-        //      本地执行时间      任务上传时间      上传数据大小
-        double localExeTime, uplinkTime, uplinkComputingData;
-
-        //上传数据大小
-        uplinkComputingData = totalComputingDatas * sparrowIndex;
-        //本地执行时间
-        localExeTime = BigDecimal.valueOf(((totalComputingDatas - uplinkComputingData) * cyclesPerBit) / localComputingAbility).setScale(3, BigDecimal.ROUND_HALF_UP).doubleValue();
-
-        double execTime = mobileUser.getExecTime();
-        Double updatingUplinkRate = mobileUser.getUpdatingUplinkRate();
-        mobileUser.setExecTime(localExeTime);
-        reFreshUpdatingUplinkRate();
-        uplinkTime = BigDecimal.valueOf(uplinkComputingData / mobileUser.getUpdatingUplinkRate()).setScale(3, BigDecimal.ROUND_HALF_UP).doubleValue();
-
-        double edgeExecTime = BigDecimal.valueOf(uplinkComputingData * cyclesPerBit / edgeSettings.getMecComputingAbility()).setScale(3, BigDecimal.ROUND_HALF_UP).doubleValue();
-        double totalTime = localExeTime + uplinkTime + edgeExecTime;
-        mobileUser.setExecTime(execTime);
-        mobileUser.setUpdatingUplinkRate(updatingUplinkRate);
-
-        return packagingAccuracy(totalTime);
-    }
+//    private double fTime(double sparrowIndex) {
+//
+//        //用户计算 1 bit数据所需CPU周期数
+//        Integer cyclesPerBit = mobileUser.getCyclesPerBit();
+//        //用户本地计算能力
+//        Float localComputingAbility = mobileUser.getLocalComputingAbility();
+//        //      本地执行时间      任务上传时间      上传数据大小
+//        double localExeTime, uplinkTime, uplinkComputingData;
+//
+//        //上传数据大小
+//        uplinkComputingData = totalComputingDatas * sparrowIndex;
+//        //本地执行时间
+//        localExeTime = BigDecimal.valueOf(((totalComputingDatas - uplinkComputingData) * cyclesPerBit) / localComputingAbility).setScale(3, BigDecimal.ROUND_HALF_UP).doubleValue();
+//
+//        double execTime = mobileUser.getExecTime();
+//        Double updatingUplinkRate = mobileUser.getUpdatingUplinkRate();
+//        mobileUser.setExecTime(localExeTime);
+//        reFreshUpdatingUplinkRate();
+//        uplinkTime = BigDecimal.valueOf(uplinkComputingData / mobileUser.getUpdatingUplinkRate()).setScale(3, BigDecimal.ROUND_HALF_UP).doubleValue();
+//
+//        double edgeExecTime = BigDecimal.valueOf(uplinkComputingData * cyclesPerBit / edgeSettings.getMecComputingAbility()).setScale(3, BigDecimal.ROUND_HALF_UP).doubleValue();
+//        double totalTime = localExeTime + uplinkTime + edgeExecTime;
+//        mobileUser.setExecTime(execTime);
+//        mobileUser.setUpdatingUplinkRate(updatingUplinkRate);
+//
+//        return packagingAccuracy(totalTime);
+//    }
 
     /**
      * 同时考虑时间和能耗
@@ -284,18 +284,24 @@ public class ONE_GWO_MEC {
         //用户本地计算能力
         Float localComputingAbility = mobileUser.getLocalComputingAbility();
         //    本地执行时间    卸载时间      任务上传时间      上传数据大小          本地执行能耗          上传能量
-        double localExeTime, uplinkTime, uplinkComputingData, localExeEnergy = 0.0d, uplinkEnergy = 0.0d;
+        double localExeTime, uplinkTime, uplinkComputingData, localExeEnergy, uplinkEnergy;
         //上传数据大小
         uplinkComputingData = totalComputingDatas * sparrowIndex;
         //本地执行时间
-        localExeTime = BigDecimal.valueOf(((totalComputingDatas - uplinkComputingData) * cyclesPerBit) / localComputingAbility).setScale(3, BigDecimal.ROUND_HALF_UP).doubleValue();
+        localExeTime = BigDecimal.valueOf(((totalComputingDatas - uplinkComputingData) * cyclesPerBit) / localComputingAbility).setScale(PRECISION, BigDecimal.ROUND_HALF_UP).doubleValue();
         localExeEnergy = (totalComputingDatas - uplinkComputingData) * cyclesPerBit * Math.pow(mobileUser.getLocalComputingAbility(), 2) * 1e-22;
         mobileUser.setExecTime(localExeTime);
+        double execTime = mobileUser.getExecTime();
+        Double updatingUplinkRate = mobileUser.getUpdatingUplinkRate();
         reFreshUpdatingUplinkRate();
-        uplinkTime = BigDecimal.valueOf(uplinkComputingData / mobileUser.getUpdatingUplinkRate()).setScale(3, BigDecimal.ROUND_HALF_UP).doubleValue();
+        uplinkTime = BigDecimal.valueOf(uplinkComputingData / mobileUser.getUpdatingUplinkRate()).setScale(PRECISION, BigDecimal.ROUND_HALF_UP).doubleValue();
         uplinkEnergy = mobileUser.getTransPower() * uplinkTime;
-        double edgeExecTime = BigDecimal.valueOf(uplinkComputingData * cyclesPerBit / edgeSettings.getMecComputingAbility()).setScale(3, BigDecimal.ROUND_HALF_UP).doubleValue();
-        double totalTime = localExeTime + uplinkTime + edgeExecTime;
-        return packagingAccuracy(mobileUser.getAlpha() * (totalTime / (totalComputingDatas * cyclesPerBit / localComputingAbility)) + mobileUser.getBeta() * ((localExeEnergy + uplinkEnergy) / (totalComputingDatas * cyclesPerBit * Math.pow(mobileUser.getLocalComputingAbility(), 2) * 1e-22)));
+        double totalTime = localExeTime + uplinkTime;
+        mobileUser.setExecTime(execTime);
+        mobileUser.setUpdatingUplinkRate(updatingUplinkRate);
+
+        double p1 = mobileUser.getAlpha() * (totalTime / (totalComputingDatas * cyclesPerBit / localComputingAbility));
+        double p2 = mobileUser.getBeta() * ((localExeEnergy + uplinkEnergy) / (totalComputingDatas * cyclesPerBit * Math.pow(mobileUser.getLocalComputingAbility(), 2) * 1e-22));
+        return packagingAccuracy(p1 + p2);
     }
 }
