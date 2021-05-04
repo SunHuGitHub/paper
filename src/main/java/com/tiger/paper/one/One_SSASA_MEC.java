@@ -15,7 +15,7 @@ public class One_SSASA_MEC {
     /**
      * 控制小数点后几位的精度
      */
-    private static final int PRECISION = 4;
+    private static final int PRECISION = 6;
     /**
      * cent/gigahertz   分/千兆赫 -> 6/1G
      */

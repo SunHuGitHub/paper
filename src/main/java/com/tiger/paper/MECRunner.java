@@ -34,7 +34,7 @@ public class MECRunner {
     /**
      * 任务数量
      */
-    private static int TASKNUM = 100;
+    private static int TASKNUM = 200;
     /**
      * 移动用户个数
      */
@@ -162,7 +162,7 @@ public class MECRunner {
 //                        saCountdown.countDown();
 //                    });
                     ssasaThreadPool.execute(() -> {
-                        One_SSASA_MEC ssasa = new One_SSASA_MEC(100, 500, 0.2f, 0.1f, 0.8f, JSONObject.parseObject(JSONObject.toJSONString(mobileUser), MobileUser.class), mobileUsers, edgeSettings, taskCollec.get(finalI));
+                        One_SSASA_MEC ssasa = new One_SSASA_MEC(100, 1000, 0.2f, 0.1f, 0.8f, JSONObject.parseObject(JSONObject.toJSONString(mobileUser), MobileUser.class), mobileUsers, edgeSettings, taskCollec.get(finalI));
 //                        ssasaRes.add(ssasa.calculate());
                         Map<String, Double> res = ssasa.calculateMap();
                         ssasaRes.add(res.get("res"));
@@ -211,12 +211,12 @@ public class MECRunner {
                     sum += ssasaRe;
                 }
                 double val = sum / TASKNUM;
-                System.out.println("ssasa：" + TASKNUM + "：" + BigDecimal.valueOf(val).setScale(4, RoundingMode.HALF_UP).doubleValue() + " " + fmt.print(LocalDateTime.now()));
+                System.out.println("ssasa：" + TASKNUM + "：" + BigDecimal.valueOf(val).setScale(6, RoundingMode.HALF_UP).doubleValue() + " " + fmt.print(LocalDateTime.now()));
                 sum = 0;
                 for (Double cost : costList) {
                     sum += cost;
                 }
-                System.out.println("ssasa：" + TASKNUM + "：" + BigDecimal.valueOf(sum / TASKNUM).setScale(4, RoundingMode.HALF_UP).doubleValue() + " " + fmt.print(LocalDateTime.now()));
+                System.out.println("ssasa：" + TASKNUM + "：" + BigDecimal.valueOf(sum / TASKNUM).setScale(6, RoundingMode.HALF_UP).doubleValue() + " " + fmt.print(LocalDateTime.now()));
 //                sum = 0;
 //                for (Double gwoRe : gwoRes) {
 //                    sum += gwoRe;
@@ -231,14 +231,14 @@ public class MECRunner {
                 dataModels = new ArrayList<>();
                 dataModels.add(new DataModel(TASKNUM, val));
                 excelWriter.write(dataModels, writeSheet);
-                TASKNUM = TASKNUM + 100;
+                TASKNUM = TASKNUM + 200;
 //                ssaRes.clear();
 //                saRes.clear()
                 ssasaRes.clear();
 //                gwoRes.clear();
                 costList.clear();
             }
-            TASKNUM = 100;
+            TASKNUM = 200;
         }
         excelWriter.finish();
     }
