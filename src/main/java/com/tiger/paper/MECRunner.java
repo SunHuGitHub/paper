@@ -34,7 +34,7 @@ public class MECRunner {
     /**
      * 任务数量
      */
-    private static int TASKNUM = 200;
+    private static int TASKNUM = 400;
     /**
      * 移动用户个数
      */
@@ -231,14 +231,14 @@ public class MECRunner {
                 dataModels = new ArrayList<>();
                 dataModels.add(new DataModel(TASKNUM, val));
                 excelWriter.write(dataModels, writeSheet);
-                TASKNUM = TASKNUM + 200;
+                TASKNUM = TASKNUM + 400;
 //                ssaRes.clear();
 //                saRes.clear()
                 ssasaRes.clear();
 //                gwoRes.clear();
                 costList.clear();
             }
-            TASKNUM = 200;
+            TASKNUM = 400;
         }
         excelWriter.finish();
     }
