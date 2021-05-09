@@ -70,6 +70,10 @@ public class SA {
         return run(t0, tEnd, q, l, BigDecimal.valueOf(Math.random()).setScale(PRECISION, RoundingMode.HALF_UP).doubleValue());
     }
 
+    public double calculateSLA() {
+        return runSLA(t0, tEnd, q, l, BigDecimal.valueOf(Math.random()).setScale(PRECISION, RoundingMode.HALF_UP).doubleValue());
+    }
+
     public Map<String, Double> calculateMap() {
         return runMap(t0, tEnd, q, l, BigDecimal.valueOf(Math.random()).setScale(PRECISION, RoundingMode.HALF_UP).doubleValue());
     }
@@ -91,7 +95,7 @@ public class SA {
         while (t > tEnd) {
             //一直迭代
             for (long i = 0; i < l; i++) {
-                double v1 = fCost(temp);
+                double v1 = fTime(temp);
                 double random;
                 double val = temp;
                 double v = temp;
@@ -104,7 +108,7 @@ public class SA {
                     }
                 } while (val < 0 || val > 1);
 //                mobileUser = JSONObject.parseObject(JSONObject.toJSONString(mobileUserTemp), MobileUser.class);
-                double v2 = fCost(BigDecimal.valueOf(val).setScale(PRECISION, RoundingMode.HALF_UP).doubleValue());
+                double v2 = fTime(BigDecimal.valueOf(val).setScale(PRECISION, RoundingMode.HALF_UP).doubleValue());
 
                 df = v2 - v1;
                 // 这里是退火算法的精髓（以一定概率接受比现在差的，这样就跳出局部最优解趋于全局最优）
@@ -124,10 +128,10 @@ public class SA {
         }
 //        System.out.println(temp);
 //        System.out.println(fTime(temp));
-        return fCost(temp);
+        return fTime(temp);
     }
 
-    private Map<String, Double> runMap(double t0, double tEnd, double q, long l, double sparrowIndex) {
+    private double runSLA(double t0, double tEnd, double q, long l, double sparrowIndex) {
 
         double t = t0;
         double df;
@@ -135,7 +139,7 @@ public class SA {
         while (t > tEnd) {
             //一直迭代
             for (long i = 0; i < l; i++) {
-                double v1 = fCost(temp);
+                double v1 = fTime(temp);
                 double random;
                 double val = temp;
                 double v = temp;
@@ -148,7 +152,54 @@ public class SA {
                     }
                 } while (val < 0 || val > 1);
 //                mobileUser = JSONObject.parseObject(JSONObject.toJSONString(mobileUserTemp), MobileUser.class);
-                double v2 = fCost(BigDecimal.valueOf(val).setScale(PRECISION, RoundingMode.HALF_UP).doubleValue());
+                double v2 = fTime(BigDecimal.valueOf(val).setScale(PRECISION, RoundingMode.HALF_UP).doubleValue());
+
+                df = v2 - v1;
+                // 这里是退火算法的精髓（以一定概率接受比现在差的，这样就跳出局部最优解趋于全局最优）
+                // 新的路线比之前的要差（这里表现为新的路线长度比原先的长）
+                // 专业术语：metropolis准则
+                if (df >= 0) {
+                    //表示接受新的移动
+                    if (Math.exp((-df) / t) >= Math.random()) {
+                        temp = BigDecimal.valueOf(val).setScale(PRECISION, RoundingMode.HALF_UP).doubleValue();
+                    }
+                } else {
+                    temp = BigDecimal.valueOf(val).setScale(PRECISION, RoundingMode.HALF_UP).doubleValue();
+                }
+//                mobileUser = JSONObject.parseObject(JSONObject.toJSONString(mobileUserTemp), MobileUser.class);
+            }
+            t *= q;
+        }
+        double res = 0d;
+        double fg = fTime(temp);
+        if (fg > packagingAccuracy((totalComputingDatas * mobileUser.getCyclesPerBit() / mobileUser.getLocalComputingAbility() * 0.68))) {
+            res = 1d;
+        }
+        return res;
+    }
+
+    private Map<String, Double> runMap(double t0, double tEnd, double q, long l, double sparrowIndex) {
+
+        double t = t0;
+        double df;
+        double temp = sparrowIndex;
+        while (t > tEnd) {
+            //一直迭代
+            for (long i = 0; i < l; i++) {
+                double v1 = fTime(temp);
+                double random;
+                double val = temp;
+                double v = temp;
+                do {
+                    random = BigDecimal.valueOf(Math.random() * 2 - 1).setScale(PRECISION, RoundingMode.HALF_UP).doubleValue();
+                    if (v + random < 1) {
+                        val = v + random;
+                    } else {
+                        val = v - random;
+                    }
+                } while (val < 0 || val > 1);
+//                mobileUser = JSONObject.parseObject(JSONObject.toJSONString(mobileUserTemp), MobileUser.class);
+                double v2 = fTime(BigDecimal.valueOf(val).setScale(PRECISION, RoundingMode.HALF_UP).doubleValue());
 
                 df = v2 - v1;
                 // 这里是退火算法的精髓（以一定概率接受比现在差的，这样就跳出局部最优解趋于全局最优）
@@ -169,7 +220,7 @@ public class SA {
 //        System.out.println(temp);
 //        System.out.println(fTime(temp));
         Map<String, Double> res = new HashMap<>();
-        res.put("res", fCost(temp));
+        res.put("res", fTime(temp));
         res.put("cost", packagingAccuracy(((temp * totalComputingDatas * mobileUser.getCyclesPerBit()) / edgeSettings.getMecComputingAbility()) * (edgeSettings.getMecComputingAbility() / 1e9) * COST));
         return res;
     }
@@ -212,44 +263,44 @@ public class SA {
 //        return packagingAccuracy(localExeEnergy + uplinkEnergy + uplinkComputingData * cyclesPerBit * Math.pow(edgeSettings.getMecComputingAbility(), 2) * 1e-22);
 //    }
 
-    //    private double fTime(double sparrowIndex) {
-//        //拿到用户的总任务集合
-////        List<Integer> totalComputingDatas = mobileUser.getTotalComputingDatas();
-//        //用户计算 1 bit数据所需CPU周期数
-//        Integer cyclesPerBit = mobileUser.getCyclesPerBit();
-//        //用户本地计算能力
-//        Float localComputingAbility = mobileUser.getLocalComputingAbility();
-//        //      本地执行时间    卸载时间      任务上传时间      上传数据大小          本地执行能耗          上传能量           trueTime = Math.max(localExeTime, offloadTime);
-//        double localExeTime, offloadTime, uplinkTime, uplinkComputingData, localExeEnergy = 0.0d, uplinkEnergy = 0.0d, trueTime = 0.0d;
-////        for (int i = 0; i < totalComputingDatas.size(); i++) {
-//        //上传数据大小
-//        uplinkComputingData = totalComputingDatas * sparrowIndex;
-//        //本地执行时间
-//        localExeTime = BigDecimal.valueOf(((totalComputingDatas - uplinkComputingData) * cyclesPerBit) / localComputingAbility).setScale(3, BigDecimal.ROUND_HALF_UP).doubleValue();
-////        localExeEnergy = (totalComputingDatas - uplinkComputingData) * cyclesPerBit * Math.pow(mobileUser.getLocalComputingAbility(), 2) * 1e-22;
-////        if (i != 0) {
-//        // i 等于 0 表示 一开始卸载任务    i != 0 表示用户处于移动状态中  所以要重新刷新上传速率
-////            reFreshUpdatingUplinkRate(mobileUser);
-////            uplinkTime = BigDecimal.valueOf(uplinkComputingData / mobileUser.getUpdatingUplinkRate()).doubleValue();
-////        } else {
-////        }
-////        offloadTime = uplinkTime + BigDecimal.valueOf(uplinkComputingData * cyclesPerBit / edgeSettings.getMecComputingAbility()).doubleValue();
-////        trueTime = BigDecimal.valueOf(trueTime + Math.max(localExeTime, offloadTime)).setScale(PRECISION, BigDecimal.ROUND_HALF_UP).doubleValue();
-//        double execTime = mobileUser.getExecTime();
-//        Double updatingUplinkRate = mobileUser.getUpdatingUplinkRate();
-//        mobileUser.setExecTime(localExeTime);
-//
-//        reFreshUpdatingUplinkRate();
-//
-//        uplinkTime = BigDecimal.valueOf(uplinkComputingData / mobileUser.getUpdatingUplinkRate()).setScale(3, BigDecimal.ROUND_HALF_UP).doubleValue();
-////        uplinkEnergy = mobileUser.getTransPower() * uplinkTime;
-//        double edgeExecTime = BigDecimal.valueOf(uplinkComputingData * cyclesPerBit / edgeSettings.getMecComputingAbility()).setScale(3, BigDecimal.ROUND_HALF_UP).doubleValue();
-//        double totalTime = localExeTime + uplinkTime + edgeExecTime;
-//        mobileUser.setExecTime(execTime);
-//        mobileUser.setUpdatingUplinkRate(updatingUplinkRate);
-////        }
-//        return BigDecimal.valueOf(totalTime).setScale(PRECISION, RoundingMode.HALF_UP).doubleValue();
-//    }
+    private double fTime(double sparrowIndex) {
+        //拿到用户的总任务集合
+//        List<Integer> totalComputingDatas = mobileUser.getTotalComputingDatas();
+        //用户计算 1 bit数据所需CPU周期数
+        Integer cyclesPerBit = mobileUser.getCyclesPerBit();
+        //用户本地计算能力
+        Float localComputingAbility = mobileUser.getLocalComputingAbility();
+        //      本地执行时间    卸载时间      任务上传时间      上传数据大小          本地执行能耗          上传能量           trueTime = Math.max(localExeTime, offloadTime);
+        double localExeTime, offloadTime, uplinkTime, uplinkComputingData, localExeEnergy = 0.0d, uplinkEnergy = 0.0d, trueTime = 0.0d;
+//        for (int i = 0; i < totalComputingDatas.size(); i++) {
+        //上传数据大小
+        uplinkComputingData = totalComputingDatas * sparrowIndex;
+        //本地执行时间
+        localExeTime = BigDecimal.valueOf(((totalComputingDatas - uplinkComputingData) * cyclesPerBit) / localComputingAbility).setScale(3, BigDecimal.ROUND_HALF_UP).doubleValue();
+//        localExeEnergy = (totalComputingDatas - uplinkComputingData) * cyclesPerBit * Math.pow(mobileUser.getLocalComputingAbility(), 2) * 1e-22;
+//        if (i != 0) {
+        // i 等于 0 表示 一开始卸载任务    i != 0 表示用户处于移动状态中  所以要重新刷新上传速率
+//            reFreshUpdatingUplinkRate(mobileUser);
+//            uplinkTime = BigDecimal.valueOf(uplinkComputingData / mobileUser.getUpdatingUplinkRate()).doubleValue();
+//        } else {
+//        }
+//        offloadTime = uplinkTime + BigDecimal.valueOf(uplinkComputingData * cyclesPerBit / edgeSettings.getMecComputingAbility()).doubleValue();
+//        trueTime = BigDecimal.valueOf(trueTime + Math.max(localExeTime, offloadTime)).setScale(PRECISION, BigDecimal.ROUND_HALF_UP).doubleValue();
+        double execTime = mobileUser.getExecTime();
+        Double updatingUplinkRate = mobileUser.getUpdatingUplinkRate();
+        mobileUser.setExecTime(localExeTime);
+
+        reFreshUpdatingUplinkRate();
+
+        uplinkTime = BigDecimal.valueOf(uplinkComputingData / mobileUser.getUpdatingUplinkRate()).setScale(3, BigDecimal.ROUND_HALF_UP).doubleValue();
+//        uplinkEnergy = mobileUser.getTransPower() * uplinkTime;
+        double edgeExecTime = BigDecimal.valueOf(uplinkComputingData * cyclesPerBit / edgeSettings.getMecComputingAbility()).setScale(3, BigDecimal.ROUND_HALF_UP).doubleValue();
+        double totalTime = localExeTime + uplinkTime + edgeExecTime;
+        mobileUser.setExecTime(execTime);
+        mobileUser.setUpdatingUplinkRate(updatingUplinkRate);
+//        }
+        return BigDecimal.valueOf(totalTime).setScale(PRECISION, RoundingMode.HALF_UP).doubleValue();
+    }
 
     /**
      * 同时考虑时间和能耗
@@ -257,37 +308,37 @@ public class SA {
      * @param sparrowIndex
      * @return
      */
-    private double fCost(double sparrowIndex) {
-        //用户计算 1 bit数据所需CPU周期数
-        Integer cyclesPerBit = mobileUser.getCyclesPerBit();
-        //用户本地计算能力
-        Float localComputingAbility = mobileUser.getLocalComputingAbility();
-        //    本地执行时间    卸载时间      任务上传时间      上传数据大小          本地执行能耗          上传能量
-        double localExeTime, uplinkTime, uplinkComputingData, localExeEnergy, uplinkEnergy;
-        //上传数据大小
-        uplinkComputingData = totalComputingDatas * sparrowIndex;
-        //本地执行时间
-        localExeTime = BigDecimal.valueOf(((totalComputingDatas - uplinkComputingData) * cyclesPerBit) / localComputingAbility).setScale(PRECISION, BigDecimal.ROUND_HALF_UP).doubleValue();
-        localExeEnergy = (totalComputingDatas - uplinkComputingData) * cyclesPerBit * Math.pow(mobileUser.getLocalComputingAbility(), 2) * 1e-22;
-        mobileUser.setExecTime(localExeTime);
-        double execTime = mobileUser.getExecTime();
-        Double updatingUplinkRate = mobileUser.getUpdatingUplinkRate();
-        reFreshUpdatingUplinkRate();
-        uplinkTime = BigDecimal.valueOf(uplinkComputingData / mobileUser.getUpdatingUplinkRate()).setScale(PRECISION, BigDecimal.ROUND_HALF_UP).doubleValue();
-        uplinkEnergy = mobileUser.getTransPower() * uplinkTime;
-        double totalTime = localExeTime + uplinkTime;
-        mobileUser.setExecTime(execTime);
-        mobileUser.setUpdatingUplinkRate(updatingUplinkRate);
-
-        double p1 = mobileUser.getAlpha() * (totalTime / (totalComputingDatas * cyclesPerBit / localComputingAbility));
-        double p2 = mobileUser.getBeta() * ((localExeEnergy + uplinkEnergy) / (totalComputingDatas * cyclesPerBit * Math.pow(mobileUser.getLocalComputingAbility(), 2) * 1e-22));
-        return packagingAccuracy(p1 + p2);
-    }
+//    private double fCost(double sparrowIndex) {
+//        //用户计算 1 bit数据所需CPU周期数
+//        Integer cyclesPerBit = mobileUser.getCyclesPerBit();
+//        //用户本地计算能力
+//        Float localComputingAbility = mobileUser.getLocalComputingAbility();
+//        //    本地执行时间    卸载时间      任务上传时间      上传数据大小          本地执行能耗          上传能量
+//        double localExeTime, uplinkTime, uplinkComputingData, localExeEnergy, uplinkEnergy;
+//        //上传数据大小
+//        uplinkComputingData = totalComputingDatas * sparrowIndex;
+//        //本地执行时间
+//        localExeTime = BigDecimal.valueOf(((totalComputingDatas - uplinkComputingData) * cyclesPerBit) / localComputingAbility).setScale(PRECISION, BigDecimal.ROUND_HALF_UP).doubleValue();
+//        localExeEnergy = (totalComputingDatas - uplinkComputingData) * cyclesPerBit * Math.pow(mobileUser.getLocalComputingAbility(), 2) * 1e-22;
+//        mobileUser.setExecTime(localExeTime);
+//        double execTime = mobileUser.getExecTime();
+//        Double updatingUplinkRate = mobileUser.getUpdatingUplinkRate();
+//        reFreshUpdatingUplinkRate();
+//        uplinkTime = BigDecimal.valueOf(uplinkComputingData / mobileUser.getUpdatingUplinkRate()).setScale(PRECISION, BigDecimal.ROUND_HALF_UP).doubleValue();
+//        uplinkEnergy = mobileUser.getTransPower() * uplinkTime;
+//        double totalTime = localExeTime + uplinkTime;
+//        mobileUser.setExecTime(execTime);
+//        mobileUser.setUpdatingUplinkRate(updatingUplinkRate);
+//
+//        double p1 = mobileUser.getAlpha() * (totalTime / (totalComputingDatas * cyclesPerBit / localComputingAbility));
+//        double p2 = mobileUser.getBeta() * ((localExeEnergy + uplinkEnergy) / (totalComputingDatas * cyclesPerBit * Math.pow(mobileUser.getLocalComputingAbility(), 2) * 1e-22));
+//        return packagingAccuracy(p1 + p2);
+//    }
 
     /**
      * 控制小数点后几位的精度
      */
-    private static final int PRECISION = 4;
+    private static final int PRECISION = 6;
 
     private double packagingAccuracy(double x) {
         return BigDecimal.valueOf(x).setScale(PRECISION, RoundingMode.HALF_UP).doubleValue();

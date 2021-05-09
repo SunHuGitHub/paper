@@ -408,6 +408,36 @@ public class One_SSA_MEC {
         return updateMap.get("fg");
     }
 
+    public double calculateSLA() {
+        for (int i = 1; i <= iterations; i++) {
+            r2 = Math.random();
+            //更新发现者坐标
+            updateProducerPoint();
+//            System.out.println("更新发现者坐标");
+            //更新最优坐标1
+            rankAndFindLocation();
+//            System.out.println("更新最优坐标1");
+            //更新追随者坐标
+            updateScroungerPoint();
+//            System.out.println("更新追随者坐标");
+            //更新最优坐标2
+            rankAndFindLocation();
+//            System.out.println("更新最优坐标2");
+            //更新预警者坐标
+            updateSDPoint();
+//            System.out.println("更新预警者坐标");
+            //更新最优坐标3
+            rankAndFindLocation();
+//            System.out.println("更新最优坐标3");
+        }
+        double res = 0d;
+        double fg = updateMap.get("fg");
+        if (fg > packagingAccuracy((totalComputingDatas * mobileUser.getCyclesPerBit() / mobileUser.getLocalComputingAbility() * 0.68))) {
+            res = 1d;
+        }
+        return res;
+    }
+
     public Map<String, Double> calculateMap() {
         for (int i = 1; i <= iterations; i++) {
             r2 = Math.random();
