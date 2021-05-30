@@ -21,6 +21,10 @@ public class One_SSASA_MEC {
      */
     private static final int COST = 6;
     /**
+     * 截止时间
+     */
+    private static final double DEADLINE = 0.65;
+    /**
      * 种群大小
      */
     private int speciesNum;
@@ -424,43 +428,43 @@ public class One_SSASA_MEC {
         updateMap.put("historicalBest", fTime(pdMax) < fTime(historicalBest) ? packagingAccuracy(pdMax) : packagingAccuracy(historicalBest));
     }
 
-//    public double calculate() {
-//        List<Double> PDTemp;
-//        double df;
-//        for (int i = 1; i <= iterations; i++) {
-//            PDTemp = new ArrayList<>(pdPoints);
-//            r2 = Math.random();
-//            //更新发现者坐标
-//            updateProducerPoint();
-////            System.out.println("更新发现者坐标");
-//            //模拟退火
-//            for (int k = 0; k < pdPoints.size(); k++) {
-//                df = fCost(pdPoints.get(k)) - fCost(PDTemp.get(k));
-//                if (df > 0) {
-//                    if (Math.exp((-df) / t0) < Math.random()) {
-//                        pdPoints.set(k, PDTemp.get(k));
-//                    }
-//                }
-//            }
-//            //更新最优坐标1
-//            rankAndFindLocation();
-////            System.out.println("更新最优坐标1");
-//            //更新追随者坐标
-//            updateScroungerPoint();
-////            System.out.println("更新追随者坐标");
-//            //更新最优坐标2
-//            rankAndFindLocation();
-////            System.out.println("更新最优坐标2");
-//            //更新预警者坐标
-//            updateSDPoint();
-////            System.out.println("更新预警者坐标");
-//            //更新最优坐标3
-//            rankAndFindLocation();
-////            System.out.println("更新最优坐标3");
-//            t0 *= q;
-//        }
-//        return updateMap.get("fg");
-//    }
+    public double calculate() {
+        List<Double> PDTemp;
+        double df;
+        for (int i = 1; i <= iterations; i++) {
+            PDTemp = new ArrayList<>(pdPoints);
+            r2 = Math.random();
+            //更新发现者坐标
+            updateProducerPoint();
+//            System.out.println("更新发现者坐标");
+            //模拟退火
+            for (int k = 0; k < pdPoints.size(); k++) {
+                df = fTime(pdPoints.get(k)) - fTime(PDTemp.get(k));
+                if (df > 0) {
+                    if (Math.exp((-df) / t0) < Math.random()) {
+                        pdPoints.set(k, PDTemp.get(k));
+                    }
+                }
+            }
+            //更新最优坐标1
+            rankAndFindLocation();
+//            System.out.println("更新最优坐标1");
+            //更新追随者坐标
+            updateScroungerPoint();
+//            System.out.println("更新追随者坐标");
+            //更新最优坐标2
+            rankAndFindLocation();
+//            System.out.println("更新最优坐标2");
+            //更新预警者坐标
+            updateSDPoint();
+//            System.out.println("更新预警者坐标");
+            //更新最优坐标3
+            rankAndFindLocation();
+//            System.out.println("更新最优坐标3");
+            t0 *= q;
+        }
+        return updateMap.get("fg");
+    }
 
 //    public Map<String, Double> calculateMap() {
 //        List<Double> PDTemp;
@@ -543,6 +547,49 @@ public class One_SSASA_MEC {
         if (fg > packagingAccuracy((totalComputingDatas * mobileUser.getCyclesPerBit() / mobileUser.getLocalComputingAbility() * 0.68))) {
             res = 1d;
         }
+        return res;
+    }
+
+    public Map<String, Double> calculateTVRAndCostMap() {
+        List<Double> PDTemp;
+        double df;
+        for (int i = 1; i <= iterations; i++) {
+            PDTemp = new ArrayList<>(pdPoints);
+            r2 = Math.random();
+            //更新发现者坐标
+            updateProducerPoint();
+//            System.out.println("更新发现者坐标");
+            //模拟退火
+            for (int k = 0; k < pdPoints.size(); k++) {
+                df = fTime(pdPoints.get(k)) - fTime(PDTemp.get(k));
+                if (df > 0) {
+                    if (Math.exp((-df) / t0) < Math.random()) {
+                        pdPoints.set(k, PDTemp.get(k));
+                    }
+                }
+            }
+            //更新最优坐标1
+            rankAndFindLocation();
+//            System.out.println("更新最优坐标1");
+            //更新追随者坐标
+            updateScroungerPoint();
+//            System.out.println("更新追随者坐标");
+            //更新最优坐标2
+            rankAndFindLocation();
+//            System.out.println("更新最优坐标2");
+            //更新预警者坐标
+            updateSDPoint();
+//            System.out.println("更新预警者坐标");
+            //更新最优坐标3
+            rankAndFindLocation();
+//            System.out.println("更新最优坐标3");
+            t0 *= q;
+        }
+        Map<String, Double> res = new HashMap<>();
+        Double fg = updateMap.get("fg");
+        res.put("res", fg);
+        res.put("cost", packagingAccuracy(((updateMap.get("globalMax") * totalComputingDatas * mobileUser.getCyclesPerBit()) / edgeSettings.getMecComputingAbility()) * (edgeSettings.getMecComputingAbility() / 1e9) * COST));
+        res.put("TVR", fg > packagingAccuracy((totalComputingDatas * mobileUser.getCyclesPerBit() / mobileUser.getLocalComputingAbility() * DEADLINE)) ? 1.0d : 0d);
         return res;
     }
 

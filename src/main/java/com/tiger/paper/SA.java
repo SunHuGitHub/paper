@@ -25,6 +25,10 @@ public class SA {
      */
     private static final int COST = 6;
     /**
+     * 截止时间
+     */
+    private static final double DEADLINE = 0.65;
+    /**
      * 初始温度
      */
     private double t0;
@@ -75,6 +79,10 @@ public class SA {
     }
 
     public Map<String, Double> calculateMap() {
+        return runMap(t0, tEnd, q, l, BigDecimal.valueOf(Math.random()).setScale(PRECISION, RoundingMode.HALF_UP).doubleValue());
+    }
+
+    public Map<String, Double> calculateTVRAndCostMap() {
         return runMap(t0, tEnd, q, l, BigDecimal.valueOf(Math.random()).setScale(PRECISION, RoundingMode.HALF_UP).doubleValue());
     }
 
@@ -175,6 +183,55 @@ public class SA {
         if (fg > packagingAccuracy((totalComputingDatas * mobileUser.getCyclesPerBit() / mobileUser.getLocalComputingAbility() * 0.68))) {
             res = 1d;
         }
+        return res;
+    }
+
+    private Map<String, Double> runTVRAndCostMap(double t0, double tEnd, double q, long l, double sparrowIndex) {
+
+        double t = t0;
+        double df;
+        double temp = sparrowIndex;
+        while (t > tEnd) {
+            //一直迭代
+            for (long i = 0; i < l; i++) {
+                double v1 = fTime(temp);
+                double random;
+                double val = temp;
+                double v = temp;
+                do {
+                    random = BigDecimal.valueOf(Math.random() * 2 - 1).setScale(PRECISION, RoundingMode.HALF_UP).doubleValue();
+                    if (v + random < 1) {
+                        val = v + random;
+                    } else {
+                        val = v - random;
+                    }
+                } while (val < 0 || val > 1);
+//                mobileUser = JSONObject.parseObject(JSONObject.toJSONString(mobileUserTemp), MobileUser.class);
+                double v2 = fTime(BigDecimal.valueOf(val).setScale(PRECISION, RoundingMode.HALF_UP).doubleValue());
+
+                df = v2 - v1;
+                // 这里是退火算法的精髓（以一定概率接受比现在差的，这样就跳出局部最优解趋于全局最优）
+                // 新的路线比之前的要差（这里表现为新的路线长度比原先的长）
+                // 专业术语：metropolis准则
+                if (df >= 0) {
+                    //表示接受新的移动
+                    if (Math.exp((-df) / t) >= Math.random()) {
+                        temp = BigDecimal.valueOf(val).setScale(PRECISION, RoundingMode.HALF_UP).doubleValue();
+                    }
+                } else {
+                    temp = BigDecimal.valueOf(val).setScale(PRECISION, RoundingMode.HALF_UP).doubleValue();
+                }
+//                mobileUser = JSONObject.parseObject(JSONObject.toJSONString(mobileUserTemp), MobileUser.class);
+            }
+            t *= q;
+        }
+//        System.out.println(temp);
+//        System.out.println(fTime(temp));
+        Map<String, Double> res = new HashMap<>();
+        double fg = fTime(temp);
+        res.put("res", fg);
+        res.put("cost", packagingAccuracy(((temp * totalComputingDatas * mobileUser.getCyclesPerBit()) / edgeSettings.getMecComputingAbility()) * (edgeSettings.getMecComputingAbility() / 1e9) * COST));
+        res.put("TVR", fg > packagingAccuracy((totalComputingDatas * mobileUser.getCyclesPerBit() / mobileUser.getLocalComputingAbility() * DEADLINE)) ? 1.0d : 0d);
         return res;
     }
 
