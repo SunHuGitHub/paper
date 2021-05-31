@@ -18,4 +18,10 @@ public class DataModel {
     private Integer taskNum;
     @ExcelProperty(value = "值", index = 1)
     private Double value;
+    @ExcelProperty(value = "成本", index = 2)
+    private Double cost;
+    @ExcelProperty(value = "违反率", index = 3)
+    private Double tvr;
+    @ExcelProperty(value = "成本违反量", index = 4)
+    private Double cv;
 }
