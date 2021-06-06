@@ -83,7 +83,7 @@ public class SA {
     }
 
     public Map<String, Double> calculateTVRAndCostMap() {
-        return runMap(t0, tEnd, q, l, BigDecimal.valueOf(Math.random()).setScale(PRECISION, RoundingMode.HALF_UP).doubleValue());
+        return runTVRAndCostMap(t0, tEnd, q, l, BigDecimal.valueOf(Math.random()).setScale(PRECISION, RoundingMode.HALF_UP).doubleValue());
     }
 
     /**

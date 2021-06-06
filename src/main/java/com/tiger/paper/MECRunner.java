@@ -34,7 +34,7 @@ public class MECRunner {
     /**
      * 任务数量
      */
-    private static int TASKNUM = 200;
+    private static int TASKNUM = 10;
     /**
      * 移动用户个数
      */
@@ -133,16 +133,16 @@ public class MECRunner {
         ExcelWriter excelWriter = EasyExcel.write("src/main/java/com/tiger/paper/data.xlsx", DataModel.class).build();
         WriteSheet writeSheet = EasyExcel.writerSheet("data").build();
         List<DataModel> dataModels;
-        for (int b = 0; b < 30; b++) {
+        for (int b = 0; b < 5; b++) {
             for (int j = 0; j < 8; j++) {
 //                ExecutorService ssaThreadPool = Executors.newFixedThreadPool(5);
 //                CountDownLatch ssaCountDown = new CountDownLatch(TASKNUM);
-//                ExecutorService saThreadPool = Executors.newFixedThreadPool(4);
+//                ExecutorService saThreadPool = Executors.newFixedThreadPool(8);
 //                CountDownLatch saCountdown = new CountDownLatch(TASKNUM);
-//                ExecutorService ssasaThreadPool = Executors.newFixedThreadPool(5);
-//                CountDownLatch ssasaCountdown = new CountDownLatch(TASKNUM);
-                ExecutorService gwoThreadPool = Executors.newFixedThreadPool(8);
-                CountDownLatch gwoCountdown = new CountDownLatch(TASKNUM);
+                ExecutorService ssasaThreadPool = Executors.newFixedThreadPool(8);
+                CountDownLatch ssasaCountdown = new CountDownLatch(TASKNUM);
+//                ExecutorService gwoThreadPool = Executors.newFixedThreadPool(8);
+//                CountDownLatch gwoCountdown = new CountDownLatch(TASKNUM);
                 for (int i = 0; i < TASKNUM; i++) {
                     int finalI = i;
 //                    ssaThreadPool.execute(() -> {
@@ -158,39 +158,43 @@ public class MECRunner {
 //                    saThreadPool.execute(() -> {
 //                        SA sa = new SA(1000d, 1d, 0.9d, 1000, JSONObject.parseObject(JSONObject.toJSONString(mobileUser), MobileUser.class), mobileUsers, edgeSettings, taskCollec.get(finalI));
 ////                        saRes.add(sa.calculate());
-//                        saRes.add(sa.calculateSLA());
+////                        saRes.add(sa.calculateSLA());
 ////                        Map<String, Double> res = sa.calculateMap();
-////                        saRes.add(res.get("res"));
-////                        costList.add(res.get("cost"));
+//                        Map<String, Double> res = sa.calculateTVRAndCostMap();
+//                        saRes.add(res.get("res"));
+//                        costList.add(res.get("cost"));
+//                        TVRList.add(res.get("TVR"));
 //                        saCountdown.countDown();
 //                    });
-//                    ssasaThreadPool.execute(() -> {
-//                        One_SSASA_MEC ssasa = new One_SSASA_MEC(100, 1000, 0.2f, 0.1f, 0.8f, JSONObject.parseObject(JSONObject.toJSONString(mobileUser), MobileUser.class), mobileUsers, edgeSettings, taskCollec.get(finalI));
+                    ssasaThreadPool.execute(() -> {
+                        One_SSASA_MEC ssasa = new One_SSASA_MEC(100, 1000, 0.2f, 0.1f, 0.8f, JSONObject.parseObject(JSONObject.toJSONString(mobileUser), MobileUser.class), mobileUsers, edgeSettings, taskCollec.get(finalI));
 //                        ssasaRes.add(ssasa.calculateSLA());
-////                        Map<String, Double> res = ssasa.calculateMap();
-////                        ssasaRes.add(res.get("res"));
-////                        costList.add(res.get("cost"));
-//                        ssasaCountdown.countDown();
-//                    });
-                    gwoThreadPool.execute(() -> {
-                        ONE_GWO_MEC gwo = new ONE_GWO_MEC(100, 500, JSONObject.parseObject(JSONObject.toJSONString(mobileUser), MobileUser.class), mobileUsers, edgeSettings, taskCollec.get(finalI));
-//                        gwoRes.add(gwo.calculateSLA());
-//                        Map<String, Double> res = gwo.calculateMap();
-                        Map<String, Double> res = gwo.calculateTVRAndCostMap();
-                        gwoRes.add(res.get("res"));
+//                        Map<String, Double> res = ssasa.calculateMap();
+                        Map<String, Double> res = ssasa.calculateTVRAndCostMap();
+                        ssasaRes.add(res.get("res"));
                         costList.add(res.get("cost"));
                         TVRList.add(res.get("TVR"));
-                        gwoCountdown.countDown();
+                        ssasaCountdown.countDown();
                     });
+//                    gwoThreadPool.execute(() -> {
+//                        ONE_GWO_MEC gwo = new ONE_GWO_MEC(100, 500, JSONObject.parseObject(JSONObject.toJSONString(mobileUser), MobileUser.class), mobileUsers, edgeSettings, taskCollec.get(finalI));
+////                        gwoRes.add(gwo.calculateSLA());
+////                        Map<String, Double> res = gwo.calculateMap();
+//                        Map<String, Double> res = gwo.calculateTVRAndCostMap();
+//                        gwoRes.add(res.get("res"));
+//                        costList.add(res.get("cost"));
+//                        TVRList.add(res.get("TVR"));
+//                        gwoCountdown.countDown();
+//                    });
                 }
 //                ssaCountDown.await();
 //                ssaThreadPool.shutdown();
 //                saCountdown.await();
 //                saThreadPool.shutdown();
-//                ssasaCountdown.await();
-//                ssasaThreadPool.shutdown();
-                gwoCountdown.await();
-                gwoThreadPool.shutdown();
+                ssasaCountdown.await();
+                ssasaThreadPool.shutdown();
+//                gwoCountdown.await();
+//                gwoThreadPool.shutdown();
                 double sum = 0;
 //                for (Double ssaRe : ssaRes) {
 //                    sum += ssaRe;
@@ -206,57 +210,57 @@ public class MECRunner {
 //                    sum += saRe;
 //                }
 //                double val = sum / TASKNUM;
-//                System.out.println("sa：" + TASKNUM + "：" + BigDecimal.valueOf(val).setScale(4, RoundingMode.HALF_UP).doubleValue() + " " + fmt.print(LocalDateTime.now()));
+//                System.out.println("sa：" + TASKNUM + "：" + BigDecimal.valueOf(val).setScale(6, RoundingMode.HALF_UP).doubleValue() + " " + fmt.print(LocalDateTime.now()));
 //                sum = 0;
 //                for (Double cost : costList) {
 //                    sum += cost;
 //                }
 //                System.out.println("sa：" + TASKNUM + "：" + BigDecimal.valueOf(sum / TASKNUM).setScale(4, RoundingMode.HALF_UP).doubleValue() + " " + fmt.print(LocalDateTime.now()));
-//                for (Double ssasaRe : ssasaRes) {
-//                    sum += ssasaRe;
-//                }
-//                double val = sum / TASKNUM;
-//                System.out.println("ssasa：" + TASKNUM + "：" + BigDecimal.valueOf(val).setScale(6, RoundingMode.HALF_UP).doubleValue() + " " + fmt.print(LocalDateTime.now()));
+                for (Double ssasaRe : ssasaRes) {
+                    sum += ssasaRe;
+                }
+                double val = sum / TASKNUM;
+                System.out.println("ssasa：" + TASKNUM + "：" + BigDecimal.valueOf(val).setScale(6, RoundingMode.HALF_UP).doubleValue() + " " + fmt.print(LocalDateTime.now()));
 //                sum = 0;
 //                for (Double cost : costList) {
 //                    sum += cost;
 //                }
 //                System.out.println("ssasa：" + TASKNUM + "：" + BigDecimal.valueOf(sum / TASKNUM).setScale(6, RoundingMode.HALF_UP).doubleValue() + " " + fmt.print(LocalDateTime.now()));
 //                sum = 0;
-                for (Double gwoRe : gwoRes) {
-                    sum += gwoRe;
-                }
-                double val = sum / TASKNUM;
-                System.out.println("gwo：" + TASKNUM + "：" + BigDecimal.valueOf(val).setScale(6, RoundingMode.HALF_UP).doubleValue() + " " + fmt.print(LocalDateTime.now()));
+//                for (Double gwoRe : gwoRes) {
+//                    sum += gwoRe;
+//                }
+//                double val = sum / TASKNUM;
+//                System.out.println("gwo：" + TASKNUM + "：" + BigDecimal.valueOf(val).setScale(6, RoundingMode.HALF_UP).doubleValue() + " " + fmt.print(LocalDateTime.now()));
                 sum = 0;
                 for (Double cost : costList) {
                     sum += cost;
                 }
                 double cost = sum / TASKNUM;
                 //成本
-                System.out.println("gwoCost：" + TASKNUM + "：" + BigDecimal.valueOf(cost).setScale(6, RoundingMode.HALF_UP).doubleValue() + " " + fmt.print(LocalDateTime.now()));
+                System.out.println("ssasaCost：" + TASKNUM + "：" + BigDecimal.valueOf(cost).setScale(6, RoundingMode.HALF_UP).doubleValue() + " " + fmt.print(LocalDateTime.now()));
                 sum = 0;
                 for (Double tvr : TVRList) {
                     sum += tvr;
                 }
                 double tvr = sum / TASKNUM;
                 //任务违反率
-                System.out.println("gwoTVR：" + TASKNUM + "：" + BigDecimal.valueOf(tvr).setScale(6, RoundingMode.HALF_UP).doubleValue() + " " + fmt.print(LocalDateTime.now()));
+                System.out.println("ssasaTVR：" + TASKNUM + "：" + BigDecimal.valueOf(tvr).setScale(6, RoundingMode.HALF_UP).doubleValue() + " " + fmt.print(LocalDateTime.now()));
                 //成本违反量
                 double cv = cost * tvr;
-                System.out.println("gwoCV：" + TASKNUM + "：" + BigDecimal.valueOf(cv).setScale(6, RoundingMode.HALF_UP).doubleValue() + " " + fmt.print(LocalDateTime.now()));
+                System.out.println("ssasaCV：" + TASKNUM + "：" + BigDecimal.valueOf(cv).setScale(6, RoundingMode.HALF_UP).doubleValue() + " " + fmt.print(LocalDateTime.now()));
                 dataModels = new ArrayList<>();
                 dataModels.add(new DataModel(TASKNUM, val, cost, tvr, cv));
                 excelWriter.write(dataModels, writeSheet);
-                TASKNUM = TASKNUM + 200;
+                TASKNUM = TASKNUM + 500;
 //                ssaRes.clear();
 //                saRes.clear();
-//                ssasaRes.clear();
-                gwoRes.clear();
+                ssasaRes.clear();
+//                gwoRes.clear();
                 costList.clear();
                 TVRList.clear();
             }
-            TASKNUM = 200;
+            TASKNUM = 500;
         }
         excelWriter.finish();
     }
